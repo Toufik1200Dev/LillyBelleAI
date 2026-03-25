@@ -20,10 +20,11 @@ export function errorHandler(
 
   const error = err instanceof Error ? err : new Error(String(err));
 
-  console.error('[ErrorHandler] Full error:', error);
+  console.error('[ErrorHandler]', error.message, env.isProd ? '' : error.stack);
 
+  // Hide internals in production
   res.status(500).json({
     success: false,
-    error: error.message || 'Internal server error',
+    error: env.isProd ? 'Internal server error' : error.message,
   });
 }
