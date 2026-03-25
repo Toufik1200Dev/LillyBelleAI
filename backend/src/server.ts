@@ -3,7 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './config/env';
-import { authMiddleware } from './middleware/authMiddleware';
+import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
 import { rateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 import conversationsRouter from './routes/conversations';
@@ -39,7 +39,7 @@ app.use('/api/chat', chatRouter);
 
 // ─── Auth me ───────────────────────────────────────────────────────────────────
 app.get('/api/auth/me', (req, res) => {
-  const authReq = req as { userId: string; userEmail: string };
+  const authReq = req as AuthRequest;
   res.json({ success: true, data: { id: authReq.userId, email: authReq.userEmail } });
 });
 
