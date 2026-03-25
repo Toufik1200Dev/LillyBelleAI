@@ -47,9 +47,20 @@ export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
       throw new Error(`n8n webhook returned ${resp.status}: ${body}`);
     }
 
-    const data = (await resp.json()) as N8nResponse;
+    const text = await resp.text();
+    if (!text) {
+      throw new Error('n8n returned an empty response. Ensure your workflow reaches the "Respond to Webhook" node.');
+    }
+
+    let data: N8nResponse;
+    try {
+      data = JSON.parse(text) as N8nResponse;
+    } catch (e) {
+      throw new Error(`n8n returned invalid JSON: ${text.slice(0, 100)}...`);
+    }
+
     if (!data.success || !data.response) {
-      throw new Error('n8n returned an invalid or empty response');
+      throw new Error('n8n returned an invalid or empty response object');
     }
 
     return data;
