@@ -50,9 +50,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error('Error fetching profile:', error);
+      setUser(null);
+      return;
+    }
+
+    // If no profile exists, create a basic one or just use session data
+    if (!data) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      
+      if (user) {
+        const newProfile = {
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        };
+        
+        await supabase.from('profiles').upsert(newProfile);
+        setUser(newProfile as User);
+      } else {
+        setUser(null);
+      }
+      return;
+    }
+
     setUser(data as User);
   }
 
