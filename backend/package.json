@@ -1,0 +1,31 @@
+{
+  "name": "lillybelle-ai-assistant-backend",
+  "version": "1.0.0",
+  "description": "Express backend proxy for Company AI Assistant",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts",
+    "seed": "ts-node-dev --respawn=false --transpile-only src/scripts/createTestUser.ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "express-rate-limit": "^7.2.0",
+    "helmet": "^7.1.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.25",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.2",
+    "prettier": "^3.2.5"
+  }
+}
