@@ -7,7 +7,7 @@ export function isValidEmail(email: string): boolean {
 
 export function isValidPassword(password: string): { valid: boolean; message?: string } {
   if (password.length < 8) {
-    return { valid: false, message: 'Password must be at least 8 characters.' };
+    return { valid: false, message: 'Le mot de passe doit contenir au moins 8 caractères.' };
   }
   return { valid: true };
 }

@@ -31,7 +31,7 @@ export async function updateConversation(req: Request, res: Response, next: Next
 
     const isOwner = await db.verifyConversationOwner(id, userId);
     if (!isOwner) {
-      res.status(403).json({ success: false, error: 'Forbidden' });
+      res.status(403).json({ success: false, error: 'Accès refusé' });
       return;
     }
 
@@ -49,7 +49,7 @@ export async function deleteConversation(req: Request, res: Response, next: Next
 
     const isOwner = await db.verifyConversationOwner(id, userId);
     if (!isOwner) {
-      res.status(403).json({ success: false, error: 'Forbidden' });
+      res.status(403).json({ success: false, error: 'Accès refusé' });
       return;
     }
 
@@ -67,7 +67,7 @@ export async function getMessages(req: Request, res: Response, next: NextFunctio
 
     const isOwner = await db.verifyConversationOwner(id, userId);
     if (!isOwner) {
-      res.status(403).json({ success: false, error: 'Forbidden' });
+      res.status(403).json({ success: false, error: 'Accès refusé' });
       return;
     }
 

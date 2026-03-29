@@ -57,7 +57,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const createConversation = useCallback(async (): Promise<Conversation> => {
     const res = await conversationsApi.create();
-    if (!res.success || !res.data) throw new Error('Failed to create conversation');
+    if (!res.success || !res.data) throw new Error('Impossible de créer la conversation');
     setState((prev) => ({
       ...prev,
       conversations: [res.data!, ...prev.conversations],
@@ -121,7 +121,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const res = await chatApi.sendMessage(convId, content);
-      if (!res.success || !res.data) throw new Error('Invalid response from server');
+      if (!res.success || !res.data) throw new Error('Réponse du serveur invalide');
 
       const { userMessage, assistantMessage } = res.data;
 
@@ -169,6 +169,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
 export function useChatContext(): ChatContextValue {
   const ctx = useContext(ChatContext);
-  if (!ctx) throw new Error('useChatContext must be used within ChatProvider');
+  if (!ctx) throw new Error('useChatContext doit être utilisé dans un ChatProvider');
   return ctx;
 }

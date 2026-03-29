@@ -8,6 +8,10 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 import conversationsRouter from './routes/conversations';
 import chatRouter from './routes/chat';
+import {
+  postSharePointReindex,
+  postSharePointSearch,
+} from './controllers/sharePointSearchController';
 
 const app = express();
 
@@ -17,7 +21,7 @@ app.use(cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Search-Key'],
 }));
 
 // ─── Body parsing ──────────────────────────────────────────────────────────────
@@ -29,7 +33,11 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── Auth + Rate limit all /api routes ────────────────────────────────────────
+// ─── SharePoint metadata search (n8n / automation, no user JWT) ───────────────
+app.post('/api/internal/sharepoint-search', postSharePointSearch);
+app.post('/api/internal/sharepoint-search/reindex', postSharePointReindex);
+
+// ─── Auth + Rate limit all /api routes ───────────────────────────────────────
 app.use('/api', authMiddleware as express.RequestHandler);
 app.use('/api', rateLimiter);
 
@@ -45,7 +53,7 @@ app.get('/api/auth/me', (req, res) => {
 
 // ─── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req, res) => {
-  res.status(404).json({ success: false, error: 'Route not found' });
+  res.status(404).json({ success: false, error: 'Route introuvable' });
 });
 
 // ─── Error handler ─────────────────────────────────────────────────────────────

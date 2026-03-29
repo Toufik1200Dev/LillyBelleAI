@@ -16,7 +16,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
         className
       )}
       role="status"
-      aria-label="Loading"
+      aria-label="Chargement"
     />
   );
 }

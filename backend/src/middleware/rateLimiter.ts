@@ -13,7 +13,7 @@ export const rateLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       success: false,
-      error: `Too many requests. Limit: ${env.RATE_LIMIT_MAX_REQUESTS} per minute.`,
+      error: `Trop de requêtes. Limite : ${env.RATE_LIMIT_MAX_REQUESTS} par minute.`,
     });
   },
 });

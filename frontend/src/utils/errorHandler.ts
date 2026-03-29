@@ -17,7 +17,7 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'message' in error) {
     return String((error as { message: unknown }).message);
   }
-  return 'An unexpected error occurred.';
+  return 'Une erreur inattendue s’est produite.';
 }
 
 export function isNetworkError(error: unknown): boolean {

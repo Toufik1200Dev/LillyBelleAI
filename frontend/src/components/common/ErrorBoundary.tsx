@@ -29,13 +29,13 @@ export class ErrorBoundary extends React.Component<
         <div className="flex min-h-screen items-center justify-center bg-gray-950 p-6">
           <div className="rounded-2xl bg-gray-900 border border-gray-800 p-8 max-w-md w-full text-center">
             <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-400" />
-            <h2 className="mb-2 text-xl font-semibold text-white">Something went wrong</h2>
+            <h2 className="mb-2 text-xl font-semibold text-white">Une erreur s’est produite</h2>
             <p className="text-sm text-gray-400 mb-6">{this.state.error?.message}</p>
             <button
               onClick={() => window.location.reload()}
               className="rounded-lg bg-primary-600 px-6 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
             >
-              Reload page
+              Recharger la page
             </button>
           </div>
         </div>

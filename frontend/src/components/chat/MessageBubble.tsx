@@ -4,7 +4,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import clsx from 'clsx';
-import { Copy, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Copy, Check, AlertCircle, RefreshCw, User, Share2 } from 'lucide-react';
+import { Logo } from '@/components/common/Logo';
 import type { Message } from '@/types/chat';
 import { formatTime } from '@/utils/dateFormatter';
 
@@ -26,10 +27,10 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copy}
-      className="absolute right-2 top-2 rounded-md bg-gray-700 p-1.5 text-gray-400 hover:text-white hover:bg-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-      aria-label="Copy code"
+      className="rounded-lg bg-slate-50 dark:bg-white/5 p-1.5 text-slate-400 hover:text-sky-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/5"
+      aria-label="Copier le contenu"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
     </button>
   );
 }
@@ -40,55 +41,55 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
   return (
     <div
       className={clsx(
-        'group flex w-full animate-fade-slide justify-center',
-        isUser ? 'py-4' : 'py-6 bg-[#161B22]/50 border-y border-white/[0.02]'
+        'group flex w-full animate-fade-slide px-4 py-2.5 sm:py-3 transition-colors duration-500',
+        isUser ? 'justify-end' : 'justify-start'
       )}
     >
-      <div className="flex w-full max-w-3xl items-start gap-4 px-4">
+      <div className={clsx('flex max-w-[85%] items-start gap-4', isUser && 'flex-row-reverse')}>
         {/* Avatar */}
         {showAvatar ? (
           <div
             className={clsx(
-              'flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold shadow-sm ring-1 ring-white/10 mt-0.5',
+              'flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold shadow-sm border transition-all duration-500 group-hover:scale-105',
               isUser
-                ? 'bg-gradient-to-br from-primary-500 to-indigo-600 text-white'
-                : 'bg-gradient-to-br from-gray-800 to-gray-900 text-white'
+                ? 'bg-sky-100 dark:bg-sky-500/20 border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 shadow-sky-500/5'
+                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 shadow-slate-200/5'
             )}
           >
-            {isUser ? (
-              'US'
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white" stroke="currentColor" strokeWidth={2.5}>
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
+            {isUser ? <User className="h-5.5 w-5.5" /> : <Logo showText={false} className="scale-50" />}
           </div>
         ) : (
-          <div className="w-8 flex-shrink-0" />
+          <div className="w-10 flex-shrink-0" />
         )}
 
-        {/* Bubble */}
-        <div className="flex w-full flex-col min-w-0">
+        {/* Content Area */}
+        <div className={clsx('flex flex-col min-w-0', isUser ? 'items-end' : 'items-start')}>
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <span className={clsx("text-xs uppercase font-black tracking-widest font-outfit", isUser ? "text-sky-600 dark:text-sky-400" : "text-slate-500 dark:text-slate-400")}>
+              {isUser ? 'Vous' : 'LillyBelle AI'}
+            </span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{formatTime(message.created_at)}</span>
+          </div>
+
           <div
             className={clsx(
-              'text-[15px] leading-relaxed',
+              'relative rounded-[2rem] px-6 py-5 transition-all duration-500',
               isUser
-                ? 'text-gray-100 font-medium'
-                : 'text-gray-300',
-              hasError && 'text-red-400'
+                ? 'bg-sky-600 text-white shadow-xl shadow-sky-600/10 rounded-tr-none'
+                : 'bg-white dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-slate-700 dark:text-slate-200 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-tl-none'
             )}
           >
             {hasError && (
-              <div className="flex items-center gap-2 text-red-400 mb-2 text-xs font-semibold uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-red-500 mb-3 text-xs font-bold font-outfit uppercase tracking-wider">
                 <AlertCircle className="h-4 w-4" />
-                Network Error
+                Erreur de connexion
               </div>
             )}
 
             {isUser ? (
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="whitespace-pre-wrap break-words leading-relaxed font-medium">{message.content}</p>
             ) : (
-              <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-[#0D1117] prose-pre:border prose-pre:border-white/5 prose-pre:shadow-xl">
+              <div className="prose prose-custom max-w-none prose-p:leading-relaxed">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -97,16 +98,16 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
                       const codeString = String(children).replace(/\n$/, '');
                       if (match) {
                         return (
-                          <div className="relative group my-5 rounded-xl overflow-hidden border border-white/5 bg-[#0D1117]">
-                            <div className="flex items-center justify-between bg-white/[0.02] px-4 py-2 border-b border-white/5">
-                              <span className="text-xs font-mono text-gray-400">{match[1]}</span>
+                          <div className="relative group my-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0B0F19] shadow-inner">
+                            <div className="flex items-center justify-between bg-slate-100/50 dark:bg-white/5 px-4 py-2.5 border-b border-slate-200 dark:border-white/5">
+                              <span className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 font-outfit">{match[1]}</span>
                               <CopyButton text={codeString} />
                             </div>
                             <SyntaxHighlighter
                               style={oneDark as Record<string, React.CSSProperties>}
                               language={match[1]}
                               PreTag="div"
-                              customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '13px' }}
+                              customStyle={{ margin: 0, padding: '1.5rem', background: '#282c34', fontSize: '14px' }}
                             >
                               {codeString}
                             </SyntaxHighlighter>
@@ -115,7 +116,7 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
                       }
                       return (
                         <code
-                          className="rounded-md bg-white/[0.05] px-1.5 py-0.5 font-mono text-[13px] text-gray-200"
+                          className="rounded-lg bg-slate-100 dark:bg-white/5 px-1.5 py-1 font-mono text-sm text-sky-700 dark:text-sky-400 font-bold border border-slate-200 dark:border-white/5"
                           {...props}
                         >
                           {children}
@@ -124,29 +125,19 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
                     },
                     a({ href, children }) {
                       return (
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 font-medium underline underline-offset-4 hover:text-primary-300 transition-colors">
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-600 dark:text-sky-400 font-bold underline underline-offset-4 decoration-sky-500/30 dark:decoration-sky-500/50 hover:decoration-sky-500 dark:hover:decoration-sky-400 transition-all">
                           {children}
                         </a>
                       );
                     },
                     p({ children }) {
-                      return <p className="mb-4 last:mb-0">{children}</p>;
+                      return <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>;
                     },
                     ul({ children }) {
-                      return <ul className="list-disc list-outside ml-4 space-y-2 mb-4">{children}</ul>;
-                    },
-                    ol({ children }) {
-                      return <ol className="list-decimal list-outside ml-4 space-y-2 mb-4">{children}</ol>;
+                      return <ul className="list-disc list-outside ml-4 space-y-2 mb-4 marker:text-sky-500">{children}</ul>;
                     },
                     li({ children }) {
-                      return <li className="pl-1 marker:text-gray-500">{children}</li>;
-                    },
-                    blockquote({ children }) {
-                      return (
-                        <blockquote className="border-l-2 border-primary-500 pl-4 py-0.5 text-gray-400 italic my-4 bg-primary-500/5 rounded-r-lg">
-                          {children}
-                        </blockquote>
-                      );
+                      return <li className="pl-1 text-slate-600 dark:text-slate-400 font-medium">{children}</li>;
                     },
                   }}
                 >
@@ -154,45 +145,53 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
                 </ReactMarkdown>
               </div>
             )}
+
+            {/* Actions for Assistant */}
+            {!isUser && !hasError && (
+              <div className="mt-5 flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-white/5 transition-colors duration-500">
+                <CopyButton text={message.content} />
+                <button
+                  className="rounded-lg bg-slate-50 dark:bg-white/5 p-1.5 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10"
+                  aria-label="Partager la réponse"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-        {/* Sources */}
-        {!isUser && message.metadata?.sources && message.metadata.sources.length > 0 && (
-          <div className="mt-2 space-y-1.5 w-full">
-            <p className="text-xs text-gray-500 font-medium">Sources:</p>
-            {message.metadata.sources.map((source, idx) => (
-              <a
-                key={idx}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-2 rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 text-xs hover:border-primary-500/40 transition-colors group/source"
-              >
-                <span className="mt-0.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-primary-400 group-hover/source:bg-primary-300" />
-                <div>
-                  <p className="font-medium text-gray-300 group-hover/source:text-primary-300 transition-colors">{source.title}</p>
-                  {source.snippet && <p className="text-gray-500 mt-0.5 line-clamp-1">{source.snippet}</p>}
-                </div>
-              </a>
-            ))}
-          </div>
-        )}
+          {/* Sources Area */}
+          {!isUser && message.metadata?.sources && message.metadata.sources.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2 w-full">
+              {message.metadata.sources.map((source, idx) => (
+                <a
+                  key={idx}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-white/[0.02] px-4 py-2 text-xs hover:border-sky-300 dark:hover:border-sky-500 hover:bg-white dark:hover:bg-white/[0.05] hover:shadow-lg hover:shadow-sky-500/5 transition-all group/source"
+                >
+                  <Share2 className="h-3 w-3 text-sky-500 opacity-60" />
+                  <span className="font-bold text-slate-500 dark:text-slate-400 group-hover/source:text-slate-900 dark:group-hover:text-white transition-colors max-w-[150px] truncate">
+                    {source.title}
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
 
-        {/* Timestamp + retry */}
-        <div className="mt-1.5 flex items-center gap-2">
-          <span className="text-[10px] text-gray-600">{formatTime(message.created_at)}</span>
+          {/* Retry Button */}
           {hasError && onRetry && (
             <button
               onClick={onRetry}
-              className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors"
+              className="mt-4 flex items-center gap-2.5 rounded-2xl bg-red-50 dark:bg-red-500/10 px-5 py-2.5 text-xs font-black text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all border border-red-200 dark:border-red-500/20 font-outfit uppercase tracking-wider shadow-sm"
             >
-              <RefreshCw className="h-3 w-3" />
-              Retry
+              <RefreshCw className="h-4 w-4" />
+              Réessayer la connexion
             </button>
           )}
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

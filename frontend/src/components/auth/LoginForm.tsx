@@ -21,7 +21,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     e.preventDefault();
     setError(null);
 
-    if (!isValidEmail(email)) return setError('Please enter a valid email address.');
+    if (!isValidEmail(email)) return setError('Veuillez saisir une adresse e-mail valide.');
     const pwdCheck = isValidPassword(password);
     if (!pwdCheck.valid) return setError(pwdCheck.message!);
 
@@ -38,8 +38,8 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-          Email Address
+        <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-2">
+          Adresse e-mail
         </label>
         <input
           id="login-email"
@@ -49,13 +49,13 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@company.com"
           required
-          className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:bg-white/[0.05] focus:border-primary-500/50 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all"
+          className="w-full rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/10 transition-all font-semibold"
         />
       </div>
 
       <div>
-        <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-          Password
+        <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-2">
+          Mot de passe
         </label>
         <div className="relative">
           <input
@@ -66,13 +66,13 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 pr-11 text-sm text-white placeholder-gray-500 focus:bg-white/[0.05] focus:border-primary-500/50 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all"
+            className="w-full rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 px-4 py-3 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/10 transition-all font-semibold"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -91,20 +91,20 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-white text-gray-950 px-6 py-3 text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-4 focus:ring-white/20 active:scale-[0.98]"
+        className="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 dark:bg-white text-white dark:text-gray-950 px-6 py-3 text-sm font-bold shadow-lg shadow-sky-600/20 dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-sky-500 dark:hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/20 dark:focus:ring-white/20 active:scale-[0.98]"
       >
         {isLoading ? <Spinner size="sm" /> : <LogIn className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />}
-        {isLoading ? 'Signing in...' : 'Sign in to workspace'}
+        {isLoading ? 'Connexion…' : 'Se connecter à l’espace de travail'}
       </button>
 
-      <p className="text-center text-sm text-gray-400 mt-6">
-        Don't have an account?{' '}
+      <p className="text-center text-sm text-slate-500 dark:text-gray-400 mt-6">
+        Pas encore de compte ?{' '}
         <button
           type="button"
           onClick={onSwitchToSignup}
-          className="font-semibold text-white hover:text-primary-400 transition-colors"
+          className="font-bold text-sky-600 dark:text-white hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
         >
-          Request access
+          Demander l’accès
         </button>
       </p>
     </form>

@@ -14,7 +14,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="flex h-screen items-center justify-center bg-gray-950">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-gray-400">Chargement…</p>
         </div>
       </div>
     );

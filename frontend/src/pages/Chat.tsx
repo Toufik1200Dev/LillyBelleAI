@@ -15,16 +15,12 @@ export function Chat() {
 
   const showWelcome = !activeConversationId && messages.length === 0;
 
-  const handleSuggestion = async (text: string) => {
-    await sendMessage(text);
-  };
-
   return (
     <AppLayout>
       <div className="flex flex-col flex-1 overflow-hidden">
         {showWelcome ? (
           <div className="flex flex-1 flex-col overflow-y-auto">
-            <WelcomeScreen onSuggestionClick={handleSuggestion} />
+            <WelcomeScreen />
           </div>
         ) : (
           <ChatWindow

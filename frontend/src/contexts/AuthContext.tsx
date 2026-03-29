@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const newProfile = {
           id: user.id,
           email: user.email || '',
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
         };
         
         await supabase.from('profiles').upsert(newProfile);
@@ -123,6 +123,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
+  if (!ctx) throw new Error('useAuthContext doit être utilisé dans un AuthProvider');
   return ctx;
 }

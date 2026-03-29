@@ -7,6 +7,10 @@ export const env = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL ?? '',
   N8N_API_KEY: process.env.N8N_API_KEY ?? '',
+  /** Secret for POST /api/internal/sharepoint-search (falls back to N8N_API_KEY if unset). */
+  SHAREPOINT_SEARCH_INTERNAL_KEY: process.env.SHAREPOINT_SEARCH_INTERNAL_KEY ?? '',
+  /** Optional override for the folder containing sharepoint_metadata.json (default: src/n8n-data). */
+  N8N_DATA_DIR: process.env.N8N_DATA_DIR ?? '',
   CORS_ORIGIN: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').replace(/\/$/, ''),
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '60000', 10),
   RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? '20', 10),

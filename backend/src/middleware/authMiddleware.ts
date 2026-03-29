@@ -15,7 +15,7 @@ export async function authMiddleware(
 ): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, error: 'Missing or invalid Authorization header' });
+    res.status(401).json({ success: false, error: 'En-tête Authorization manquant ou invalide' });
     return;
   }
 
@@ -34,7 +34,7 @@ export async function authMiddleware(
   ).auth.getUser(token);
 
   if (error || !user) {
-    res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    res.status(401).json({ success: false, error: 'Jeton invalide ou expiré' });
     return;
   }
 

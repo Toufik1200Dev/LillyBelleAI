@@ -21,7 +21,7 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    const message = err.response?.data?.error || err.message || 'An unexpected error occurred';
+    const message = err.response?.data?.error || err.message || 'Une erreur inattendue s’est produite.';
     return Promise.reject(new Error(message));
   }
 );

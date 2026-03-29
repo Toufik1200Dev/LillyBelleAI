@@ -4,33 +4,45 @@ import logoImg from '@/components/imgs/image.png';
 interface LogoProps {
   className?: string;
   showText?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function Logo({ className, showText = true }: LogoProps) {
+export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
+  const textSizes = {
+    sm: 'text-lg',
+    md: 'text-xl',
+    lg: 'text-4xl'
+  };
+
+  const imgSizes = {
+    sm: 'h-8',
+    md: 'h-12',
+    lg: 'h-16'
+  };
+
   return (
-    <div className={clsx('flex items-center gap-3', className)}>
-      <div className="relative flex-shrink-0">
-        {/* Animated Background Glow */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 w-full bg-primary-500/25 blur-3xl rounded-full animate-glow-pulse" />
+    <div className={clsx('flex items-center gap-4 transition-colors duration-500', className)}>
+      <div className="relative flex-shrink-0 group/logo">
+        {/* Premium Ambient Glow */}
+        <div className="absolute inset-[-10px] bg-sky-500/10 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-500" />
         
-        {/* Official PNG Logo */}
         <img
           src={logoImg}
-          alt="LillyBelle Logo"
-          className="relative h-14 w-auto drop-shadow-2xl"
+          alt="LillyBelle AI"
+          className={clsx(
+            'relative w-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-transform group-hover/logo:scale-105 duration-300',
+            imgSizes[size]
+          )}
         />
       </div>
 
-      {showText && false && (
-        <div className="flex flex-col leading-tight">
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-xl font-extrabold tracking-tighter text-white">
-              lillybelle
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-            networks for all
+      {showText && (
+        <div className="flex flex-col leading-none">
+          <span className={clsx(
+            'font-black tracking-tighter text-slate-900 dark:text-white font-outfit transition-colors duration-500',
+            textSizes[size]
+          )}>
+            LillyBelle <span className="text-sky-600">AI</span>
           </span>
         </div>
       )}

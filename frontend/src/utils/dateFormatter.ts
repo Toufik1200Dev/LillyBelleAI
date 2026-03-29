@@ -1,5 +1,7 @@
 // ─── Date Formatting ──────────────────────────────────────────────────────────
 
+const locale = 'fr-FR';
+
 export function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -9,24 +11,24 @@ export function formatRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSeconds < 60) return 'just now';
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffSeconds < 60) return "à l'instant";
+  if (diffMinutes < 60) return `il y a ${diffMinutes} min`;
+  if (diffHours < 24) return `il y a ${diffHours} h`;
+  if (diffDays === 1) return 'Hier';
+  if (diffDays < 7) return `il y a ${diffDays} j`;
 
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 export function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString('en-US', {
+  return new Date(dateString).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
 export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -43,11 +45,11 @@ export function groupByDate(items: Array<{ created_at: string }>): Map<string, t
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
     let key: string;
-    if (diffDays === 0) key = 'Today';
-    else if (diffDays === 1) key = 'Yesterday';
-    else if (diffDays < 7) key = 'This Week';
-    else if (diffDays < 30) key = 'This Month';
-    else key = 'Older';
+    if (diffDays === 0) key = "Aujourd'hui";
+    else if (diffDays === 1) key = 'Hier';
+    else if (diffDays < 7) key = 'Cette semaine';
+    else if (diffDays < 30) key = 'Ce mois-ci';
+    else key = 'Plus ancien';
 
     const group = groups.get(key) ?? [];
     group.push(item);

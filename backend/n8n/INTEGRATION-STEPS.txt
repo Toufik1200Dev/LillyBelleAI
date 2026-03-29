@@ -1,0 +1,40 @@
+Backend SharePoint search + n8n — steps
+========================================
+
+1) API key (backend .env)
+   - Set SHAREPOINT_SEARCH_INTERNAL_KEY to a long random secret.
+   - OR rely on N8N_API_KEY (same value must be sent in X-Internal-Search-Key).
+   - Without one of these, POST /api/internal/sharepoint-search returns 503.
+
+2) Start backend from backend/ folder
+   npm run dev
+
+3) Test CLI (optional)
+   npm run search-metadata -- "contrat rh"
+
+4) Test HTTP (PowerShell example — replace KEY and URL)
+   $h = @{ "X-Internal-Search-Key"="KEY"; "Content-Type"="application/json" }
+   $b = '{"query":"contrat rh","limit":5}' | ConvertTo-Json -Compress
+   Invoke-RestMethod -Uri "http://localhost:3000/api/internal/sharepoint-search" -Method POST -Headers $h -Body '{"query":"contrat rh","limit":5}'
+
+5) n8n HTTP Request node (your main chat workflow)
+   URL:    http://localhost:3000/api/internal/sharepoint-search
+           (Docker n8n on Windows: try http://host.docker.internal:3000/...)
+           (n8n Cloud: must use a public HTTPS URL to your backend)
+   Method: POST
+   Header: X-Internal-Search-Key = <same as backend .env>
+   Body:   JSON
+           { "query": "<expression to user message>", "limit": 15 }
+   Chat payload from Express is usually: message, conversationId, userId, context.
+   Try: {{ $json.message }} or {{ $json.body.message }} depending on Webhook options.
+
+6) Response shape (feed to AI Agent as context only)
+   success, data.hits[] with title, folder, url, lastModified, size, score, category
+
+7) Reindex after new SharePoint export
+   npm run search-metadata -- --reindex
+   OR POST /api/internal/sharepoint-search/reindex with same X-Internal-Search-Key
+
+8) Import test workflow
+   backend/n8n/test-backend-sharepoint-search.json
+   Edit URL + header value, then run manually.

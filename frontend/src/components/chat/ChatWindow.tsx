@@ -32,7 +32,7 @@ export function ChatWindow({ messages, isLoadingMessages, isTyping }: ChatWindow
       <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Spinner size="lg" />
-          <p className="text-sm text-gray-500">Loading conversation…</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Chargement de la conversation…</p>
         </div>
       </div>
     );
@@ -46,7 +46,7 @@ export function ChatWindow({ messages, isLoadingMessages, isTyping }: ChatWindow
     <div
       ref={containerRef}
       className="flex-1 overflow-y-auto scroll-smooth"
-      aria-label="Chat messages"
+      aria-label="Messages de la conversation"
     >
       <div className="mx-auto max-w-3xl py-4">
         {messages.map((message, idx) => (

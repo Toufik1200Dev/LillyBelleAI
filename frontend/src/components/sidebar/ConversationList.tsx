@@ -14,8 +14,8 @@ export function ConversationList({ conversations, activeId, onSelect, onDelete, 
   if (conversations.length === 0) {
     return (
       <div className="px-4 py-6 text-center">
-        <p className="text-xs text-gray-600">No conversations yet.</p>
-        <p className="text-xs text-gray-600 mt-0.5">Start a new chat above.</p>
+        <p className="text-xs text-gray-600 dark:text-slate-400">Aucune conversation pour le moment.</p>
+        <p className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">Démarrez une nouvelle conversation ci-dessus.</p>
       </div>
     );
   }

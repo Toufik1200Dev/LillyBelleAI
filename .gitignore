@@ -43,3 +43,10 @@ frontend/.env
 backend/node_modules/
 backend/dist/
 backend/.env
+
+# SharePoint export + inverted index (often 100MB+; deploy via Render disk / manual upload, not Git)
+backend/src/n8n-data/sharepoint_metadata.json
+backend/src/n8n-data/index.json
+
+# Firebase local cache
+frontend/.firebase/

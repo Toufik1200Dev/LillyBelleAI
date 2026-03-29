@@ -16,11 +16,12 @@ export function Auth() {
 
   return (
     <AuthLayout
-      title={mode === 'login' ? 'Welcome back' : 'Create account'}
+      showBrandHeader={mode === 'login'}
+      title={mode === 'signup' ? 'Créer un compte' : undefined}
       subtitle={
         mode === 'login'
-          ? 'Sign in to LillyBelle AI'
-          : 'Start your journey with LillyBelle'
+          ? 'Connectez-vous à LillyBelle AI'
+          : 'Commencez avec LillyBelle'
       }
     >
       {mode === 'login' ? (

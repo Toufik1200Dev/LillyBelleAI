@@ -14,7 +14,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
     // Verify ownership
     const isOwner = await db.verifyConversationOwner(conversationId, userId);
     if (!isOwner) {
-      res.status(403).json({ success: false, error: 'Forbidden: conversation not found' });
+      res.status(403).json({ success: false, error: 'Accès refusé : conversation introuvable' });
       return;
     }
 
