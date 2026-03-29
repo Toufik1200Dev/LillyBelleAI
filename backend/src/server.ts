@@ -1,8 +1,11 @@
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './config/env';
+import { getN8nDataDir } from './config/n8nDataDir';
 import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
 import { rateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
@@ -64,7 +67,14 @@ app.listen(env.PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server running on http://localhost:${env.PORT}`);
   console.log(`   Environment : ${env.NODE_ENV}`);
   console.log(`   CORS origin : ${env.CORS_ORIGIN}`);
-  console.log(`   n8n webhook : ${env.N8N_WEBHOOK_URL || '⚠️  not set'}\n`);
+  console.log(`   n8n webhook : ${env.N8N_WEBHOOK_URL || '⚠️  not set'}`);
+  const meta = path.join(getN8nDataDir(), 'sharepoint_metadata.json');
+  if (!fs.existsSync(meta)) {
+    console.warn(`   ⚠️  sharepoint_metadata.json missing → ${meta}`);
+    console.warn(`      Internal search /api/internal/sharepoint-search will return 503 until the file is deployed.\n`);
+  } else {
+    console.log(`   SharePoint data : ${meta} (ok)\n`);
+  }
 });
 
 export default app;

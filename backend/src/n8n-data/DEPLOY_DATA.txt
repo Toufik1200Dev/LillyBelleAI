@@ -1,15 +1,38 @@
-These files are not in Git (too large for GitHub):
-  sharepoint_metadata.json
-  index.json
+Fichiers volumineux (non versionnés dans Git / GitHub) :
+  sharepoint_metadata.json   (~150 Mo)
+  index.json                 (optionnel ; reconstruit avec --reindex)
 
-On Render (or any host):
-  1. Build: `npm run build` copies *.js into backend/dist/n8n-data/
-  2. Start: use `npm start` (NOT only `node dist/server.js`) so the copy runs again before boot.
-     Put sharepoint_metadata.json and index.json in THE SAME folder the app uses:
-       • default: backend/dist/n8n-data/
-       • or set env N8N_DATA_DIR to a persistent disk path and put files there.
-  2. After updating sharepoint_metadata.json, run reindex:
-       npm run search-metadata -- --reindex
-     or POST /api/internal/sharepoint-search/reindex with X-Internal-Search-Key.
+Les modules de recherche (*.js) sont copiés dans dist/n8n-data au build et au npm start.
 
-Search code (sharepoint-search.js, metadata.js, searchMetadata.js) is in the repo.
+────────────────────────────────────────────────────────────────
+Render.com — comment fournir sharepoint_metadata.json
+────────────────────────────────────────────────────────────────
+
+Le chemin attendu par défaut est :
+  <backend>/dist/n8n-data/sharepoint_metadata.json
+(même dossier que metadata.js et sharepoint-search.js)
+
+Option A — Disque persistant (recommandé)
+  1. Créez un Disk Render et montez-le, ex. sur /var/data/n8n
+  2. Copiez-y :
+       - sharepoint_metadata.json
+       - les 3 fichiers .js depuis votre dépôt (metadata.js, sharepoint-search.js, searchMetadata.js)
+       - index.json si vous l’avez déjà généré localement
+  3. Dans l’environnement Render, définissez :
+       N8N_DATA_DIR=/var/data/n8n
+  4. Redéployez. Puis reindex :
+       POST /api/internal/sharepoint-search/reindex
+       (avec X-Internal-Search-Key)
+
+Option B — Téléchargement au build (sans disque)
+  Étendez la commande de build Render, ex. :
+    cd backend && npm install && curl -fSL "$METADATA_URL" -o src/n8n-data/sharepoint_metadata.json && npm run build
+  METADATA_URL = URL signée (Supabase Storage, S3, etc.) à mettre dans les variables d’environnement
+  Render (souvent disponible seulement au run, pas au build — vérifier la doc Render).
+
+Option C — Rebuild sur le serveur sans fichier préalable : impossible.
+  Il faut au moins sharepoint_metadata.json une fois sur l’instance.
+
+Après ajout / mise à jour de sharepoint_metadata.json :
+  npm run search-metadata -- --reindex
+  (sur la machine où se trouve le fichier, ou POST reindex sur l’API interne)

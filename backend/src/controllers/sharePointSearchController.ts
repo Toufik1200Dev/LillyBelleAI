@@ -76,11 +76,36 @@ function assertInternalKey(req: Request, res: Response): boolean {
   return true;
 }
 
+/** Large export is gitignored; must be added on the host (see DEPLOY_DATA.txt). */
+function respondIfSharepointDataMissing(dir: string, res: Response): boolean {
+  const dataFile = path.join(dir, 'sharepoint_metadata.json');
+  if (fs.existsSync(dataFile)) return false;
+  res.status(503).json({
+    success: false,
+    code: 'SHAREPOINT_DATA_MISSING',
+    error:
+      'sharepoint_metadata.json est absent : le dépôt Git ne contient pas ce gros fichier (volontairement).',
+    expectedPath: dataFile,
+    hint:
+      'Sur Render : montez un disque persistant OU importez le fichier dans ce dossier (avec metadata.js). ' +
+      'Option A : Render Disk monté sur /data/n8n + copier dedans sharepoint_metadata.json, index.json (optionnel) et les 3 .js depuis dist/n8n-data, puis N8N_DATA_DIR=/data/n8n. ' +
+      'Option B : sans disque, ajoutez une étape de build qui télécharge le fichier (curl) vers dist/n8n-data/ avant le démarrage. ' +
+      'Ensuite : npm run search-metadata -- --reindex ou POST .../sharepoint-search/reindex.',
+  });
+  return true;
+}
+
+function isMissingDataError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('Missing data file') || msg.includes('sharepoint_metadata.json');
+}
+
 export function postSharePointSearch(req: Request, res: Response, next: NextFunction): void {
   try {
     if (!assertInternalKey(req, res)) return;
     const parsed = searchBodySchema.parse(req.body);
     const dir = getN8nDataDir();
+    if (respondIfSharepointDataMissing(dir, res)) return;
     const metadata = requireAbsolute<MetadataModule>(path.join(dir, 'metadata.js'));
     const hits = metadata.searchDocuments(parsed.query, {
       limit: parsed.limit ?? 15,
@@ -95,6 +120,10 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
       },
     });
   } catch (err) {
+    if (isMissingDataError(err)) {
+      const dir = getN8nDataDir();
+      if (respondIfSharepointDataMissing(dir, res)) return;
+    }
     next(err);
   }
 }
@@ -103,6 +132,7 @@ export function postSharePointReindex(req: Request, res: Response, next: NextFun
   try {
     if (!assertInternalKey(req, res)) return;
     const dir = getN8nDataDir();
+    if (respondIfSharepointDataMissing(dir, res)) return;
     const dataFile = path.join(dir, 'sharepoint_metadata.json');
     const indexFile = path.join(dir, 'index.json');
     const ss = requireAbsolute<SharepointSearchModule>(path.join(dir, 'sharepoint-search.js'));
@@ -116,6 +146,10 @@ export function postSharePointReindex(req: Request, res: Response, next: NextFun
       },
     });
   } catch (err) {
+    if (isMissingDataError(err)) {
+      const dir = getN8nDataDir();
+      if (respondIfSharepointDataMissing(dir, res)) return;
+    }
     next(err);
   }
 }
