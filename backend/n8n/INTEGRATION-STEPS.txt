@@ -17,13 +17,18 @@ Backend SharePoint search + n8n — steps
    $b = '{"query":"contrat rh","limit":5}' | ConvertTo-Json -Compress
    Invoke-RestMethod -Uri "http://localhost:3000/api/internal/sharepoint-search" -Method POST -Headers $h -Body '{"query":"contrat rh","limit":5}'
 
-5) n8n HTTP Request node (your main chat workflow)
-   URL:    http://localhost:3000/api/internal/sharepoint-search
-           (Docker n8n on Windows: try http://host.docker.internal:3000/...)
-           (n8n Cloud: must use a public HTTPS URL to your backend)
+5) n8n HTTP Request node ("Backend Search API" / similar)
+   URL:    https://<your-render-host>/api/internal/sharepoint-search
+           (local: http://localhost:3000/...)
    Method: POST
-   Header: X-Internal-Search-Key = <same as backend .env>
-   Body:   JSON
+   Authentication: Header Auth (credential, e.g. name "Backend Internal Key")
+     - In Credentials: create "Header Auth" with
+         Name:  X-Internal-Search-Key
+         Value: <exact same secret as backend SHAREPOINT_SEARCH_INTERNAL_KEY or N8N_API_KEY>
+     - Attach this credential to the HTTP Request node (do not put the secret in the node JSON).
+   Remove any hardcoded header expression like $env.SHAREPOINT_SEARCH_INTERNAL_KEY in the node.
+   Keep: Content-Type: application/json (in node headers or body options as usual).
+   Body (JSON):
            { "query": "<expression to user message>", "limit": 15 }
    Chat payload from Express is usually: message, conversationId, userId, context.
    Try: {{ $json.message }} or {{ $json.body.message }} depending on Webhook options.
@@ -37,4 +42,4 @@ Backend SharePoint search + n8n — steps
 
 8) Import test workflow
    backend/n8n/test-backend-sharepoint-search.json
-   Edit URL + header value, then run manually.
+   Edit URL; replace placeholder header with a Header Auth credential (same as step 5).
