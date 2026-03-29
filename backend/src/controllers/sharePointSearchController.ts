@@ -39,6 +39,17 @@ function internalSearchKey(): string {
   return env.SHAREPOINT_SEARCH_INTERNAL_KEY || env.N8N_API_KEY;
 }
 
+function headerInternalKey(req: Request): string | undefined {
+  const raw = req.headers['x-internal-search-key'];
+  if (typeof raw === 'string') return raw.trim();
+  if (Array.isArray(raw) && raw[0]) return String(raw[0]).trim();
+  const auth = req.headers.authorization;
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  return undefined;
+}
+
 function assertInternalKey(req: Request, res: Response): boolean {
   const expected = internalSearchKey();
   if (!expected) {
@@ -49,8 +60,8 @@ function assertInternalKey(req: Request, res: Response): boolean {
     });
     return false;
   }
-  const h = req.headers['x-internal-search-key'];
-  if (typeof h !== 'string' || h !== expected) {
+  const got = headerInternalKey(req);
+  if (!got || got !== expected) {
     res.status(401).json({ success: false, error: 'Non autorisé' });
     return false;
   }

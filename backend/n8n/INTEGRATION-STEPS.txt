@@ -36,10 +36,19 @@ Backend SharePoint search + n8n — steps
 6) Response shape (feed to AI Agent as context only)
    success, data.hits[] with title, folder, url, lastModified, size, score, category
 
-7) Reindex after new SharePoint export
+7) Reindex after new SharePoint export (local dev uses src/n8n-data)
    npm run search-metadata -- --reindex
-   OR POST /api/internal/sharepoint-search/reindex with same X-Internal-Search-Key
+   On Render: place JSON next to runtime code → dist/n8n-data/ (or N8N_DATA_DIR), then reindex
+   or POST /api/internal/sharepoint-search/reindex with same X-Internal-Search-Key
 
 8) Import test workflow
    backend/n8n/test-backend-sharepoint-search.json
    Edit URL; replace placeholder header with a Header Auth credential (same as step 5).
+
+9) 401 Non autorisé (n8n → Render)
+   - On Render, if SHAREPOINT_SEARCH_INTERNAL_KEY is set (even wrong/empty-looking), it wins
+     over N8N_API_KEY. n8n must send the SAME value as that var, OR clear it on Render and use
+     only N8N_API_KEY on both sides.
+   - n8n credential: Header NAME must be exactly X-Internal-Search-Key (not Authorization).
+   - No quotes around the secret in Render or n8n. Re-paste the key once; redeploy after env change.
+   - Optional: use Authorization: Bearer <same-secret> in n8n instead (backend accepts either).

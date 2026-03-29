@@ -6,9 +6,13 @@ export const env = {
   SUPABASE_URL: process.env.SUPABASE_URL ?? '',
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL ?? '',
-  N8N_API_KEY: process.env.N8N_API_KEY ?? '',
-  /** Secret for POST /api/internal/sharepoint-search (falls back to N8N_API_KEY if unset). */
-  SHAREPOINT_SEARCH_INTERNAL_KEY: process.env.SHAREPOINT_SEARCH_INTERNAL_KEY ?? '',
+  /** Trimmed — avoids 401 when Render/n8n copies include accidental newlines/spaces. */
+  N8N_API_KEY: (process.env.N8N_API_KEY ?? '').trim(),
+  /**
+   * Secret for POST /api/internal/sharepoint-search. If non-empty, this value is used (not N8N_API_KEY).
+   * n8n Header Auth must match THIS var when set on Render; otherwise match N8N_API_KEY.
+   */
+  SHAREPOINT_SEARCH_INTERNAL_KEY: (process.env.SHAREPOINT_SEARCH_INTERNAL_KEY ?? '').trim(),
   /** Optional override for the folder containing sharepoint_metadata.json (default: src/n8n-data). */
   N8N_DATA_DIR: process.env.N8N_DATA_DIR ?? '',
   CORS_ORIGIN: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').replace(/\/$/, ''),

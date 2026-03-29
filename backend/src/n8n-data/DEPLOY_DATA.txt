@@ -3,7 +3,10 @@ These files are not in Git (too large for GitHub):
   index.json
 
 On Render (or any host):
-  1. Add both files under backend/src/n8n-data/ on the server (persistent disk, SCP, or build step that downloads them).
+  1. After `npm run build`, JS modules live in backend/dist/n8n-data/ (copied from src).
+     Put sharepoint_metadata.json and index.json in THE SAME folder the app uses:
+       • default: backend/dist/n8n-data/
+       • or set env N8N_DATA_DIR to a persistent disk path and put files there.
   2. After updating sharepoint_metadata.json, run reindex:
        npm run search-metadata -- --reindex
      or POST /api/internal/sharepoint-search/reindex with X-Internal-Search-Key.
