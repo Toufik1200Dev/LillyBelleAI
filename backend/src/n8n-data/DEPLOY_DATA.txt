@@ -3,7 +3,8 @@ These files are not in Git (too large for GitHub):
   index.json
 
 On Render (or any host):
-  1. After `npm run build`, JS modules live in backend/dist/n8n-data/ (copied from src).
+  1. Build: `npm run build` copies *.js into backend/dist/n8n-data/
+  2. Start: use `npm start` (NOT only `node dist/server.js`) so the copy runs again before boot.
      Put sharepoint_metadata.json and index.json in THE SAME folder the app uses:
        • default: backend/dist/n8n-data/
        • or set env N8N_DATA_DIR to a persistent disk path and put files there.

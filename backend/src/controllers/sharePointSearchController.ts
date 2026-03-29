@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
 import path from 'path';
-import { pathToFileURL } from 'url';
+import { createRequire } from 'module';
 import { z } from 'zod';
 import { getN8nDataDir } from '../config/n8nDataDir';
 import { env } from '../config/env';
@@ -11,12 +12,8 @@ const searchBodySchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-/** Load CommonJS .js modules via dynamic import (works when ts-node runs as ESM or CJS). */
-async function importCjs<T>(absolutePath: string): Promise<T> {
-  const href = pathToFileURL(absolutePath).href;
-  const ns = (await import(href)) as { default?: T } & T;
-  return (ns.default ?? ns) as T;
-}
+/** createRequire works for local CJS .js on Render; dynamic import(file://) can mis-resolve. */
+const requireFromHere = createRequire(__filename);
 
 type MetadataModule = {
   searchDocuments: (
@@ -34,6 +31,17 @@ type SharepointSearchModule = {
   describeIndex: (idx: { source?: unknown }) => string;
   clearSearchCache: () => void;
 };
+
+function requireAbsolute<T>(absolutePath: string): T {
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(
+      `Fichier introuvable: ${absolutePath}. ` +
+        'Sur Render: vérifiez que « npm run build » et « npm start » copient dist/n8n-data/*.js, ' +
+        'ou définissez N8N_DATA_DIR vers un dossier contenant metadata.js.'
+    );
+  }
+  return requireFromHere(absolutePath) as T;
+}
 
 function internalSearchKey(): string {
   return env.SHAREPOINT_SEARCH_INTERNAL_KEY || env.N8N_API_KEY;
@@ -68,16 +76,12 @@ function assertInternalKey(req: Request, res: Response): boolean {
   return true;
 }
 
-export async function postSharePointSearch(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export function postSharePointSearch(req: Request, res: Response, next: NextFunction): void {
   try {
     if (!assertInternalKey(req, res)) return;
     const parsed = searchBodySchema.parse(req.body);
     const dir = getN8nDataDir();
-    const metadata = await importCjs<MetadataModule>(path.join(dir, 'metadata.js'));
+    const metadata = requireAbsolute<MetadataModule>(path.join(dir, 'metadata.js'));
     const hits = metadata.searchDocuments(parsed.query, {
       limit: parsed.limit ?? 15,
       categories: parsed.categories,
@@ -95,17 +99,13 @@ export async function postSharePointSearch(
   }
 }
 
-export async function postSharePointReindex(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export function postSharePointReindex(req: Request, res: Response, next: NextFunction): void {
   try {
     if (!assertInternalKey(req, res)) return;
     const dir = getN8nDataDir();
     const dataFile = path.join(dir, 'sharepoint_metadata.json');
     const indexFile = path.join(dir, 'index.json');
-    const ss = await importCjs<SharepointSearchModule>(path.join(dir, 'sharepoint-search.js'));
+    const ss = requireAbsolute<SharepointSearchModule>(path.join(dir, 'sharepoint-search.js'));
     const { index, rebuilt } = ss.loadOrBuildFromDisk(dataFile, indexFile, { forceRebuild: true });
     ss.clearSearchCache();
     res.json({
