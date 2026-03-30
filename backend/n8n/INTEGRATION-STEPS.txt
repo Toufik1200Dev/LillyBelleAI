@@ -45,6 +45,12 @@ Backend SharePoint search + n8n — steps
 6b) Classement des noms de fichier
    Après 004, exécuter database/005_sharepoint_search_ranking.sql dans Supabase pour
    privilégier titre = code, préfixe et sous-chaîne exacts.
+   Si la recherche renvoie toujours 0 résultat côté chat : exécuter aussi
+   database/006_sharepoint_search_safe_ts.sql (gestion tsquery vide + filtres).
+
+6c) Réponse HTTP dans n8n
+   Le nœud HTTP Request met souvent le JSON sous « body » et statusCode à la racine.
+   Le workflow backend/n8n/company-assistant-workflow.json parse les deux formes.
 
 7) Reindex after new SharePoint export (local dev uses src/n8n-data)
    npm run search-metadata -- --reindex

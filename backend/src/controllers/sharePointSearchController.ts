@@ -17,7 +17,11 @@ function compactHits(hits: SharepointSearchHit[]): Array<{ title: string; folder
 }
 
 const searchBodySchema = z.object({
-  query: z.string().min(1).max(2000),
+  query: z
+    .string()
+    .max(2000)
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1, 'query vide')),
   categories: z.array(z.string()).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   /**
