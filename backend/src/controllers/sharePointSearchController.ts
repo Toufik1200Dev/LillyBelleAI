@@ -14,6 +14,10 @@ const searchBodySchema = z.object({
 
 /** createRequire works for local CJS .js on Render; dynamic import(file://) can mis-resolve. */
 const requireFromHere = createRequire(__filename);
+// Compiled JS modules are shipped in dist/n8n-data/*.js after build.
+// When N8N_DATA_DIR points to a persistent disk with only JSON files,
+// we still want to load JS modules from dist.
+const scriptsDir = path.join(__dirname, '..', 'n8n-data');
 
 type MetadataModule = {
   searchDocuments: (
@@ -87,9 +91,10 @@ function respondIfSharepointDataMissing(dir: string, res: Response): boolean {
       'sharepoint_metadata.json est absent : le dépôt Git ne contient pas ce gros fichier (volontairement).',
     expectedPath: dataFile,
     hint:
-      'Sur Render : montez un disque persistant OU importez le fichier dans ce dossier (avec metadata.js). ' +
-      'Option A : Render Disk monté sur /data/n8n + copier dedans sharepoint_metadata.json, index.json (optionnel) et les 3 .js depuis dist/n8n-data, puis N8N_DATA_DIR=/data/n8n. ' +
-      'Option B : sans disque, ajoutez une étape de build qui télécharge le fichier (curl) vers dist/n8n-data/ avant le démarrage. ' +
+      'Sur Render : montez un disque persistant OU importez le fichier dans ce dossier. ' +
+      'Option A : Render Disk monté sur /var/data/n8n + copier sharepoint_metadata.json (et index.json optionnel) puis N8N_DATA_DIR=/var/data/n8n. ' +
+      'Les fichiers .js de recherche sont déjà fournis via le build dans dist/n8n-data/. ' +
+      'Option B : sans disque, ajoutez une étape de build qui télécharge le fichier vers dist/n8n-data/ + assurez que N8N_DATA_DIR pointe vers ce dossier. ' +
       'Ensuite : npm run search-metadata -- --reindex ou POST .../sharepoint-search/reindex.',
   });
   return true;
@@ -106,7 +111,9 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
     const parsed = searchBodySchema.parse(req.body);
     const dir = getN8nDataDir();
     if (respondIfSharepointDataMissing(dir, res)) return;
-    const metadata = requireAbsolute<MetadataModule>(path.join(dir, 'metadata.js'));
+    const metadata = requireAbsolute<MetadataModule>(
+      path.join(scriptsDir, 'metadata.js')
+    );
     const hits = metadata.searchDocuments(parsed.query, {
       limit: parsed.limit ?? 15,
       categories: parsed.categories,
@@ -135,7 +142,9 @@ export function postSharePointReindex(req: Request, res: Response, next: NextFun
     if (respondIfSharepointDataMissing(dir, res)) return;
     const dataFile = path.join(dir, 'sharepoint_metadata.json');
     const indexFile = path.join(dir, 'index.json');
-    const ss = requireAbsolute<SharepointSearchModule>(path.join(dir, 'sharepoint-search.js'));
+    const ss = requireAbsolute<SharepointSearchModule>(
+      path.join(scriptsDir, 'sharepoint-search.js')
+    );
     const { index, rebuilt } = ss.loadOrBuildFromDisk(dataFile, indexFile, { forceRebuild: true });
     ss.clearSearchCache();
     res.json({
