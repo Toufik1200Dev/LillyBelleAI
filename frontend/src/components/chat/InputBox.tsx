@@ -61,8 +61,10 @@ export function InputBox({ onSend, isDisabled, placeholder = 'Posez une question
       <div className="mx-auto max-w-4xl relative">
         <div
           className={clsx(
-            'flex items-end gap-2 sm:gap-3 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.03] p-1.5 sm:p-2 pl-4 sm:pl-6 shadow-2xl shadow-slate-200/60 dark:shadow-none transition-all duration-500 ease-out group',
-            isDisabled ? 'opacity-50' : 'hover:border-slate-300 dark:hover:border-white/10 focus-within:border-sky-500/40 focus-within:ring-8 focus-within:ring-sky-500/5'
+            'flex items-center gap-2 sm:gap-3 w-full rounded-[1.25rem] sm:rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.03] p-2 pl-4 sm:pl-6 shadow-lg shadow-slate-200/40 dark:shadow-none transition-all duration-300 ease-out group',
+            isDisabled
+              ? 'opacity-50'
+              : 'hover:border-slate-300 dark:hover:border-white/10 focus-within:border-sky-500/40 focus-within:ring-4 focus-within:ring-sky-500/15'
           )}
         >
           <textarea
@@ -75,7 +77,7 @@ export function InputBox({ onSend, isDisabled, placeholder = 'Posez une question
             placeholder={placeholder}
             rows={1}
             aria-label="Saisie du message"
-            className="flex-1 resize-none bg-transparent text-[15px] text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed min-h-[56px] max-h-[200px] py-4 leading-relaxed font-medium"
+            className="flex-1 resize-none bg-transparent text-[15px] text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed min-h-[56px] max-h-[200px] py-3 leading-relaxed font-medium"
           />
 
           <div className="flex flex-shrink-0 items-center justify-center p-2">
