@@ -28,13 +28,16 @@ Backend SharePoint search + n8n — steps
      - Attach this credential to the HTTP Request node (do not put the secret in the node JSON).
    Remove any hardcoded header expression like $env.SHAREPOINT_SEARCH_INTERNAL_KEY in the node.
    Keep: Content-Type: application/json (in node headers or body options as usual).
-   Body (JSON):
-           { "query": "<expression to user message>", "limit": 15 }
+   Body (JSON) — recommended for Gemini latency:
+           { "query": "<expression to user message>", "limit": 5, "compact": true }
+           compact: true → hits are only { title, folder, url } (no size/score/date noise).
    Chat payload from Express is usually: message, conversationId, userId, context.
    Try: {{ $json.message }} or {{ $json.body.message }} depending on Webhook options.
 
 6) Response shape (feed to AI Agent as context only)
-   success, data.hits[] with title, folder, url, lastModified, size, score, category
+   success, data.hits[], data.count, data.query, data.compact (if compact was true)
+   Full hits: title, folder, url, lastModified, size, score, category
+   With "compact": true: title, folder, url only
 
 7) Reindex after new SharePoint export (local dev uses src/n8n-data)
    npm run search-metadata -- --reindex
@@ -45,6 +48,12 @@ Backend SharePoint search + n8n — steps
    backend/n8n/test-backend-sharepoint-search.json
    Edit URL; replace placeholder header with a Header Auth credential (same as step 5).
 
+   Workflow production (webhook + recherche compacte + contournement sans Gemini) :
+   backend/n8n/company-assistant-workflow.json
+   - Définir la variable d’environnement n8n GEMINI_API_KEY (ou remplacer l’expression
+     du paramètre query « key » par une autre source approuvée par votre instance).
+   - Ne jamais coller une clé API en dur dans le JSON du workflow.
+
 9) 401 Non autorisé (n8n → Render)
    - On Render, if SHAREPOINT_SEARCH_INTERNAL_KEY is set (even wrong/empty-looking), it wins
      over N8N_API_KEY. n8n must send the SAME value as that var, OR clear it on Render and use
@@ -52,3 +61,108 @@ Backend SharePoint search + n8n — steps
    - n8n credential: Header NAME must be exactly X-Internal-Search-Key (not Authorization).
    - No quotes around the secret in Render or n8n. Re-paste the key once; redeploy after env change.
    - Optional: use Authorization: Bearer <same-secret> in n8n instead (backend accepts either).
+
+10) « Désolé / aucune information » alors que les liens s’affichent
+   Cause fréquente: le nœud Agent (Gemini) reçoit seulement des métadonnées SharePoint
+   (titre, dossier, URL), pas le contenu des fichiers. Le modèle croit qu’il « n’a pas le
+   contexte » et s’excuse, pendant que le flux joint quand même metadata.sources en sortie.
+
+   Dans n8n, corrigez surtout le prompt système du Agent, par exemple:
+   - Si la liste « documents trouvés » (hits) n’est pas vide: ne jamais dire qu’il n’y a
+     aucune information. Résumer en 2–4 phrases ce que ces documents sont (titres/dossiers)
+     et inviter l’utilisateur à ouvrir les liens pour le texte complet.
+   - Si la liste est vide: expliquer qu’aucun document correspondant n’a été trouvé.
+
+   Vérifiez aussi que le texte construit à partir des hits est bien branché sur l’entrée
+   « contexte » / user message du même run que l’Agent (pas seulement sur le Respond).
+
+   Le backend remplace désormais certaines formulations d’excuse si des sources sont
+   présentes dans metadata (file chatController.ts) — le réglage du prompt dans n8n
+   reste la solution propre pour un vrai résumé.
+
+11) Réduire la latence : contexte court, Gemini modeste, contournement sans modèle
+   ---------------------------------------------------------------------------
+
+   A) Requête HTTP « Backend Search »
+   - Body : { "query": "…", "limit": 5, "compact": true }
+     (3–5 suffit ; limit élevée = prompts longs = Gemini plus lent.)
+   - Option sans « compact » : un nœud Code peut tronquer côté n8n (voir C).
+
+   B) Nœud Gemini / Agent (génération)
+   - maxOutputTokens : passer de ~1024 à 300–500 (réponses plus courtes = moins de temps).
+   - temperature : 0.1–0.2 (plus stable, un peu plus prévisible).
+   - Garder le prompt système court ; injecter seulement le bloc « contexte » du Code.
+
+   C) Nœud Code « Process Search Results » (exemple — adapter les noms de nœuds)
+   Entrée : sortie du HTTP Request (body déjà parsé : success, data.hits).
+   Récupérer le message utilisateur depuis le Webhook (remplacez 'Webhook' par le nom réel).
+
+   ```javascript
+   // Entrée = réponse du POST /api/internal/sharepoint-search
+   const http = $input.first().json;
+   const wrap = http.body ?? http;
+   const hits = (wrap.data && wrap.data.hits) || wrap.hits || [];
+   // Message utilisateur (selon la structure de votre Webhook)
+   const wh = $('Webhook').first().json;
+   const userMessage =
+     wh.body?.message ?? wh.message ?? wh.body?.body?.message ?? '';
+
+   const TOP = 5; // ou 3 pour encore moins de tokens
+   const top = hits.slice(0, TOP);
+
+   const hasResults = top.length > 0;
+   const lines = top.map(
+     (h, i) =>
+       `${i + 1}. ${h.title}\n   Dossier: ${h.folder || ''}\n   Lien: ${h.url || ''}`
+   );
+   const contextForModel = hasResults
+     ? `Documents SharePoint (métadonnées seulement, pas le texte des fichiers) :\n\n${lines.join(
+         '\n\n'
+       )}`
+     : '';
+
+   const sources = top.map((h) => ({
+     title: h.title,
+     url: h.url,
+     snippet: (h.folder || '').slice(0, 200),
+   }));
+
+   return [
+     {
+       json: {
+         userMessage,
+         hasResults,
+         totalHits: top.length,
+         contextForModel,
+         sources,
+       },
+     },
+   ];
+   ```
+
+   Brancher « contextForModel » + « userMessage » vers le champ que votre Agent lit
+   (souvent : message utilisateur + section « Documents : … » dans le prompt).
+
+   D) Contournement rapide si aucun résultat (sans appeler Gemini)
+   1. Après le Code, ajoutez un nœud IF :
+      - Condition : Boolean
+      - Value 1 : {{ $json.hasResults }}
+      - Operation : equal
+      - Value 2 : true
+   2. Sortie FALSE (hasResults === false) :
+      - Nœud Set (ou Code) qui produit l’objet attendu par « Respond to Webhook », par ex. :
+          success: true
+          response: "Je n’ai trouvé aucun document SharePoint correspondant à votre recherche. Reformulez ou précisez un dossier ou un mot-clé du titre."
+          metadata: { sources: [], hasResults: false, totalHits: 0 }
+      - Puis « Respond to Webhook » sur cette branche.
+   3. Sortie TRUE :
+      - Enchaîne vers le nœud Gemini / Agent, puis un petit Code qui fusionne :
+          la réponse texte du modèle + metadata.sources + hasResults: true + totalHits
+        puis « Respond to Webhook ».
+
+   Important : une seule réponse webhook par exécution — ne pas laisser les deux branches
+   répondre ; l’IF doit mener soit vers Respond direct, soit vers Agent puis Respond.
+
+   E) Ce que le dépôt change déjà côté API
+   - POST .../sharepoint-search accepte "compact": true pour des hits allégés.
+   - Utilisez limit: 5 (ou 3) dans le même JSON pour limiter le travail en base et la taille du prompt.

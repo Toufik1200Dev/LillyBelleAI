@@ -19,11 +19,17 @@ interface N8nResponse {
   };
 }
 
-export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
-  if (!env.N8N_WEBHOOK_URL) {
-    throw new Error('N8N_WEBHOOK_URL n’est pas configurée');
-  }
+function isRetryableHttp(status: number): boolean {
+  return status === 429 || status >= 500;
+}
 
+function isAbortLikeError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return err.name === 'AbortError' || msg.includes('aborted') || msg.includes('timeout');
+}
+
+async function callN8nOnce(payload: N8nPayload): Promise<N8nResponse> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -32,7 +38,7 @@ export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55_000); // 55s timeout
+  const timeout = setTimeout(() => controller.abort(), env.N8N_TIMEOUT_MS);
 
   try {
     const resp = await fetch(env.N8N_WEBHOOK_URL, {
@@ -44,6 +50,9 @@ export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => '');
+      if (isRetryableHttp(resp.status)) {
+        throw new Error(`N8N_RETRYABLE_HTTP_${resp.status}:${body}`);
+      }
       throw new Error(`Le webhook n8n a renvoyé ${resp.status} : ${body}`);
     }
 
@@ -55,7 +64,7 @@ export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
     let data: N8nResponse;
     try {
       data = JSON.parse(text) as N8nResponse;
-    } catch (e) {
+    } catch (_e) {
       throw new Error(`n8n a renvoyé du JSON invalide : ${text.slice(0, 100)}...`);
     }
 
@@ -64,7 +73,42 @@ export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
     }
 
     return data;
+  } catch (err) {
+    if (isAbortLikeError(err)) {
+      throw new Error('N8N_RETRYABLE_TIMEOUT');
+    }
+    throw err;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function callN8n(payload: N8nPayload): Promise<N8nResponse> {
+  if (!env.N8N_WEBHOOK_URL) {
+    throw new Error('N8N_WEBHOOK_URL n’est pas configurée');
+  }
+  const maxRetries = Math.max(0, env.N8N_MAX_RETRIES);
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await callN8nOnce(payload);
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const retryable = msg.startsWith('N8N_RETRYABLE_HTTP_') || msg === 'N8N_RETRYABLE_TIMEOUT';
+      if (!retryable || attempt === maxRetries) break;
+      await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+    }
+  }
+
+  if (lastErr instanceof Error && lastErr.message === 'N8N_RETRYABLE_TIMEOUT') {
+    throw new Error(
+      "Le service d'IA prend trop de temps à répondre. Merci de réessayer dans un instant."
+    );
+  }
+  if (lastErr instanceof Error && lastErr.message.startsWith('N8N_RETRYABLE_HTTP_')) {
+    throw new Error("Le service d'IA est temporairement indisponible. Merci de réessayer.");
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }

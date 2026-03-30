@@ -5,12 +5,24 @@ import { createRequire } from 'module';
 import { z } from 'zod';
 import { getN8nDataDir } from '../config/n8nDataDir';
 import { env } from '../config/env';
-import { searchSharepointDocs } from '../services/sharepointSearchDb';
+import { searchSharepointDocs, type SharepointSearchHit } from '../services/sharepointSearchDb';
+
+function compactHits(hits: SharepointSearchHit[]): Array<{ title: string; folder: string; url: string }> {
+  return hits.map((h) => ({
+    title: h.title,
+    folder: h.folder,
+    url: h.url,
+  }));
+}
 
 const searchBodySchema = z.object({
   query: z.string().min(1).max(2000),
   categories: z.array(z.string()).optional(),
   limit: z.number().int().min(1).max(100).optional(),
+  /**
+   * When true, each hit is only { title, folder, url } — smaller JSON and prompts for n8n / Gemini.
+   */
+  compact: z.boolean().optional(),
 });
 
 /** createRequire works for local CJS .js on Render; dynamic import(file://) can mis-resolve. */
@@ -105,12 +117,14 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
     const parsed = searchBodySchema.parse(req.body);
     searchSharepointDocs(parsed.query, parsed.categories, parsed.limit ?? 15)
       .then((hits) => {
+        const payloadHits = parsed.compact ? compactHits(hits) : hits;
         res.json({
           success: true,
           data: {
-            hits,
-            count: hits.length,
+            hits: payloadHits,
+            count: payloadHits.length,
             query: parsed.query,
+            compact: Boolean(parsed.compact),
           },
         });
       })

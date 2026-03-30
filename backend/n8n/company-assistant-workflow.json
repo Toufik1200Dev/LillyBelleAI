@@ -1,0 +1,203 @@
+{
+  "name": "Company Assistant (LillyBelle)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "company-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [1312, -64],
+      "id": "48c1a780-972f-4aed-b77a-b68cd01b18f2",
+      "name": "Webhook1",
+      "webhookId": "f58b7348-e5ae-4937-a78f-f043e5abd00f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const json = $input.item.json;\nconst body = json.body || json;\nconst message = body.message || json.message || '';\n\nconst normalizeText = (text) => String(text)\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst domainCorrections = {\n  contratt: 'contrat',\n  pcaa: 'pca',\n  poo: 'po'\n};\n\nconst correctedMessage = String(message)\n  .split(' ')\n  .map((word) => domainCorrections[word] || word)\n  .join(' ');\n\nreturn {\n  json: {\n    userMessage: normalizeText(correctedMessage),\n    userId: body.userId || json.userId,\n    conversationId: body.conversationId || json.conversationId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1536, -64],
+      "id": "65411bae-d33d-417a-a16d-6d76796caab3",
+      "name": "Validate & Normalize Input"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lillybelle-ai-chat.onrender.com/api/internal/sharepoint-search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"query\": \"={{ $json.userMessage }}\", \"limit\": 5, \"compact\": true }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1760, -64],
+      "id": "15020540-ea5a-4474-8e15-1e7bd043053f",
+      "name": "Backend Search API1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "afMn75EoBKDPq3xD",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nlet payload = raw.body ?? raw;\nif (typeof payload === 'string') {\n  try {\n    payload = JSON.parse(payload);\n  } catch {\n    payload = {};\n  }\n}\n\nconst hits = Array.isArray(payload?.data?.hits) ? payload.data.hits : [];\nconst searchOk = payload?.success !== false;\nconst searchError =\n  searchOk ? null : (payload?.error || payload?.message || 'Échec de la recherche');\n\nconst TOP = 5;\nconst top = hits.slice(0, TOP);\n\nconst lines = top.map((h, i) => {\n  const title = h.title || '';\n  const folder = h.folder || '';\n  const url = h.url || '';\n  return `${i + 1}. ${title}\\n   Dossier: ${folder}\\n   Lien: ${url}`;\n});\n\nconst contextForModel =\n  top.length > 0\n    ? `Documents SharePoint (métadonnées seulement — pas le texte des fichiers). Tu dois brièvement décrire ces documents et inviter à ouvrir les liens. Ne dis jamais qu'il n'y a « aucune information » si cette liste est non vide.\\n\\n${lines.join('\\n\\n')}`\n    : '';\n\nconst sources = top.map((h) => ({\n  title: h.title || '',\n  url: h.url || '#',\n  snippet: String(h.folder || '').slice(0, 200)\n}));\n\nlet userMessage = '';\ntry {\n  userMessage = $('Validate & Normalize Input').first().json.userMessage || '';\n} catch (_) {}\n\nconst hasResults = searchOk && top.length > 0;\n\nreturn [\n  {\n    json: {\n      contextForModel,\n      sources,\n      hasResults,\n      userMessage,\n      totalHits: hits.length,\n      returnedCount: top.length,\n      searchOk,\n      searchError\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1984, -64],
+      "id": "a684b8e3-20d0-4baa-8235-17f38a2c1638",
+      "name": "Process Search Results1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c7e2a1f0-5b4d-4e3c-9d2a-1f0e8c7b6a54",
+              "leftValue": "={{ $json.hasResults }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2208, -64],
+      "id": "f1e2d3c4-b5a6-7890-abcd-ef1234567890",
+      "name": "Has Search Results?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json;\n\nif (j.searchError) {\n  return [\n    {\n      json: {\n        success: true,\n        response:\n          \"La recherche de documents est temporairement indisponible. Merci de réessayer dans un instant.\",\n        metadata: {\n          sources: [],\n          hasResults: false,\n          totalHits: 0,\n          error: j.searchError,\n          timestamp: new Date().toISOString()\n        }\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      success: true,\n      response:\n        \"Je n'ai trouvé aucun document SharePoint correspondant à votre recherche. Essayez d'autres mots-clés ou précisez le dossier ou le type de document.\",\n      metadata: {\n        sources: [],\n        hasResults: false,\n        totalHits: 0,\n        timestamp: new Date().toISOString()\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2432, 48],
+      "id": "a9b8c7d6-e5f4-3210-9876-543210fedcba",
+      "name": "FastPath No Results"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  contents: [{\n    parts: [{\n      text: \"Tu es LillyBelle AI, l'assistant interne officiel de Lillybelle. Tu réponds en français, de façon courte (2 à 4 phrases).\\n\\nRègles :\\n- Si le contexte liste des documents, tu les résume brièvement (titres / dossiers) et tu invites à ouvrir les liens pour le texte complet.\\n- Ne dis jamais qu'il n'y a « aucune information » si la liste de documents n'est pas vide.\\n- Tu n'as pas le contenu des fichiers, seulement titre, dossier et lien.\\n\\n\" + $json.contextForModel + \"\\n\\nQuestion utilisateur : \" + $json.userMessage\n    }]\n  }],\n  generationConfig: { temperature: 0.15, maxOutputTokens: 400 }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2432, -176],
+      "id": "40d9b5fa-6e8d-4e9c-90bb-c194853e0552",
+      "name": "Gemini AI Agent1",
+      "retryOnFail": true,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiResponse = $input.first().json;\nlet aiResponse = 'Information indisponible';\n\nif (geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text) {\n  aiResponse = geminiResponse.candidates[0].content.parts[0].text;\n}\n\nlet sources = [];\nlet hasResults = false;\nlet totalHits = 0;\n\ntry {\n  const s = $('Process Search Results1').first().json;\n  sources = s.sources || [];\n  hasResults = s.hasResults || false;\n  totalHits = s.totalHits || 0;\n} catch (_) {}\n\nreturn {\n  json: {\n    success: true,\n    response: aiResponse,\n    metadata: {\n      sources,\n      hasResults,\n      totalHits,\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2656, -176],
+      "id": "b5fc1438-d67f-491d-b743-76b55b5de4fa",
+      "name": "Format Response1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [2880, -64],
+      "id": "00df2e39-7cab-45c7-ab23-67ce6b67626e",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "connections": {
+    "Webhook1": {
+      "main": [[{ "node": "Validate & Normalize Input", "type": "main", "index": 0 }]]
+    },
+    "Validate & Normalize Input": {
+      "main": [[{ "node": "Backend Search API1", "type": "main", "index": 0 }]]
+    },
+    "Backend Search API1": {
+      "main": [[{ "node": "Process Search Results1", "type": "main", "index": 0 }]]
+    },
+    "Process Search Results1": {
+      "main": [[{ "node": "Has Search Results?", "type": "main", "index": 0 }]]
+    },
+    "Has Search Results?": {
+      "main": [
+        [{ "node": "Gemini AI Agent1", "type": "main", "index": 0 }],
+        [{ "node": "FastPath No Results", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini AI Agent1": {
+      "main": [[{ "node": "Format Response1", "type": "main", "index": 0 }]]
+    },
+    "Format Response1": {
+      "main": [[{ "node": "Respond to Webhook1", "type": "main", "index": 0 }]]
+    },
+    "FastPath No Results": {
+      "main": [[{ "node": "Respond to Webhook1", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e28f116677069a04af87c01ef4c383fbb305256a5c24a719c6754c4444c31ba"
+  }
+}

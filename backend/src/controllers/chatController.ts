@@ -4,6 +4,33 @@ import { sendMessageSchema } from '../utils/validators';
 import * as db from '../services/supabaseService';
 import { callN8n } from '../services/n8nService';
 
+/** n8n may attach sources while the LLM still apologizes: we only pass metadata, not file bodies. */
+function countSearchHitsFromMetadata(metadata: Record<string, unknown> | undefined): number {
+  if (!metadata) return 0;
+  const sources = metadata.sources;
+  if (Array.isArray(sources)) return sources.length;
+  const hits = metadata.hits;
+  if (Array.isArray(hits)) return hits.length;
+  const totalHits = metadata.totalHits;
+  if (typeof totalHits === 'number' && totalHits > 0) return totalHits;
+  return 0;
+}
+
+const APOLOGY_DESPITE_HITS = /aucune information|pas d['']informations?|rien dans le contexte|non disponible dans le contexte|malheureusement,?\s*aucun|aucun document.*contexte|désol[ée].{0,80}(pas|aucune|impossible)/i;
+
+function assistantTextWhenHitsExistButModelApologized(
+  text: string,
+  metadata: Record<string, unknown> | undefined
+): string {
+  const n = countSearchHitsFromMetadata(metadata);
+  if (n === 0 || !APOLOGY_DESPITE_HITS.test(text)) return text;
+  return (
+    'Voici les documents SharePoint les plus pertinents pour votre demande (liens ci-dessous). ' +
+    "L'assistant ne reçoit que le titre, le dossier et le lien — pas le texte intégral des fichiers. " +
+    'Ouvrez les documents pour consulter le détail.'
+  );
+}
+
 export async function sendMessage(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
 
@@ -40,13 +67,15 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
     });
 
     const responseTime = Date.now() - start;
+    const meta = n8nResponse.metadata as Record<string, unknown> | undefined;
+    const assistantContent = assistantTextWhenHitsExistButModelApologized(n8nResponse.response, meta);
 
     // Save assistant response
     const assistantMessage = await db.saveMessage({
       conversationId,
       role: 'assistant',
-      content: n8nResponse.response,
-      metadata: n8nResponse.metadata as Record<string, unknown> | undefined,
+      content: assistantContent,
+      metadata: meta,
       responseTimeMs: responseTime,
     });
 

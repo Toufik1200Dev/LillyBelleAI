@@ -8,6 +8,10 @@ export const env = {
   N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL ?? '',
   /** Trimmed — avoids 401 when Render/n8n copies include accidental newlines/spaces. */
   N8N_API_KEY: (process.env.N8N_API_KEY ?? '').trim(),
+  /** HTTP timeout when backend calls n8n webhook (ms). */
+  N8N_TIMEOUT_MS: parseInt(process.env.N8N_TIMEOUT_MS ?? '90000', 10),
+  /** Number of retries for timeout/abort or 5xx responses from n8n. */
+  N8N_MAX_RETRIES: parseInt(process.env.N8N_MAX_RETRIES ?? '1', 10),
   /**
    * Secret for POST /api/internal/sharepoint-search. If non-empty, this value is used (not N8N_API_KEY).
    * n8n Header Auth must match THIS var when set on Render; otherwise match N8N_API_KEY.
