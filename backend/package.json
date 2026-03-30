@@ -9,6 +9,7 @@
     "start": "node scripts/copy-n8n-data-js.cjs && node dist/server.js",
     "lint": "eslint . --ext .ts",
     "seed": "ts-node-dev --respawn=false --transpile-only src/scripts/createTestUser.ts",
+    "import-sharepoint-docs": "ts-node-dev --respawn=false --transpile-only src/scripts/importSharepointDocs.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "search-metadata": "node src/n8n-data/searchMetadata.js"
   },

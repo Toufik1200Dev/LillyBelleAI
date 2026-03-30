@@ -141,11 +141,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMsg = getErrorMessage(err);
       toast.error(errorMsg);
+      const assistantErrorMsg: Message = {
+        id: crypto.randomUUID(),
+        conversation_id: convId!,
+        role: 'assistant',
+        content: errorMsg,
+        created_at: new Date().toISOString(),
+        metadata: {},
+        isError: true,
+      };
       setState((prev) => ({
         ...prev,
-        messages: prev.messages.map((m) =>
-          m.id === optimisticUserMsg.id ? { ...m, isError: true } : m
-        ),
+        messages: [...prev.messages, assistantErrorMsg],
         isTyping: false,
         isSending: false,
       }));

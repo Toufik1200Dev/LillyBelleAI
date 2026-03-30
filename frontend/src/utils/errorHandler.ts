@@ -12,10 +12,21 @@ export class AppError extends Error {
 }
 
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    return String((error as { message: unknown }).message);
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String((error as { message: unknown }).message)
+          : '';
+
+  if (raw) {
+    // Render/backend provisioning state: SharePoint export not yet present on host.
+    if (raw.includes('SHAREPOINT_DATA_MISSING') || raw.includes('Missing data file')) {
+      return 'La base documentaire est en cours de préparation sur le serveur. Réessayez dans quelques minutes.';
+    }
+    return raw;
   }
   return 'Une erreur inattendue s’est produite.';
 }

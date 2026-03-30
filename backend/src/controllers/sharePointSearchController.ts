@@ -5,6 +5,7 @@ import { createRequire } from 'module';
 import { z } from 'zod';
 import { getN8nDataDir } from '../config/n8nDataDir';
 import { env } from '../config/env';
+import { searchSharepointDocs } from '../services/sharepointSearchDb';
 
 const searchBodySchema = z.object({
   query: z.string().min(1).max(2000),
@@ -18,13 +19,6 @@ const requireFromHere = createRequire(__filename);
 // When N8N_DATA_DIR points to a persistent disk with only JSON files,
 // we still want to load JS modules from dist.
 const scriptsDir = path.join(__dirname, '..', 'n8n-data');
-
-type MetadataModule = {
-  searchDocuments: (
-    q: string,
-    o?: { limit?: number; categories?: string[] }
-  ) => unknown[];
-};
 
 type SharepointSearchModule = {
   loadOrBuildFromDisk: (
@@ -109,28 +103,19 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
   try {
     if (!assertInternalKey(req, res)) return;
     const parsed = searchBodySchema.parse(req.body);
-    const dir = getN8nDataDir();
-    if (respondIfSharepointDataMissing(dir, res)) return;
-    const metadata = requireAbsolute<MetadataModule>(
-      path.join(scriptsDir, 'metadata.js')
-    );
-    const hits = metadata.searchDocuments(parsed.query, {
-      limit: parsed.limit ?? 15,
-      categories: parsed.categories,
-    });
-    res.json({
-      success: true,
-      data: {
-        hits,
-        count: hits.length,
-        query: parsed.query,
-      },
-    });
+    searchSharepointDocs(parsed.query, parsed.categories, parsed.limit ?? 15)
+      .then((hits) => {
+        res.json({
+          success: true,
+          data: {
+            hits,
+            count: hits.length,
+            query: parsed.query,
+          },
+        });
+      })
+      .catch(next);
   } catch (err) {
-    if (isMissingDataError(err)) {
-      const dir = getN8nDataDir();
-      if (respondIfSharepointDataMissing(dir, res)) return;
-    }
     next(err);
   }
 }
