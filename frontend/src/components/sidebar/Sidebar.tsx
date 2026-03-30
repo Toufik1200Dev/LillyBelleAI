@@ -64,11 +64,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Header content */}
         <div className="flex h-full flex-col">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <Logo className="px-1 scale-110 origin-left" showText={false} />
+            <div className="relative flex items-center justify-center mb-8">
+              <Logo className="px-1 scale-110 origin-center" showText={false} />
               <button
                 onClick={onClose}
-                className="lg:hidden rounded-xl p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                className="lg:hidden absolute right-0 rounded-xl p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/5 transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/15"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -94,7 +94,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 placeholder="Rechercher dans l’historique…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 focus:border-sky-500/40 focus:bg-white dark:focus:bg-white/10 px-11 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition-all"
+                className="w-full rounded-3xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 backdrop-blur-sm hover:border-slate-300 dark:hover:border-white/15 focus:border-sky-500/50 focus:ring-4 focus:ring-sky-500/15 focus:bg-white dark:focus:bg-white/10 px-11 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition-all"
               />
               {search && (
                 <button

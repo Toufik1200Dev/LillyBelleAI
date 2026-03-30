@@ -75,7 +75,7 @@ export function InputBox({ onSend, isDisabled, placeholder = 'Posez une question
             placeholder={placeholder}
             rows={1}
             aria-label="Saisie du message"
-            className="flex-1 resize-none bg-transparent text-base text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed min-h-[56px] max-h-[200px] py-4 leading-relaxed font-semibold"
+            className="flex-1 resize-none bg-transparent text-[15px] text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed min-h-[56px] max-h-[200px] py-4 leading-relaxed font-medium"
           />
 
           <div className="flex flex-shrink-0 items-center justify-center p-2">

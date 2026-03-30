@@ -49,7 +49,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@company.com"
           required
-          className="w-full rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/10 transition-all font-semibold"
+          className="w-full rounded-2xl bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/15 transition-all font-medium backdrop-blur-sm"
         />
       </div>
 
@@ -66,7 +66,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 px-4 py-3 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/10 transition-all font-semibold"
+            className="w-full rounded-2xl bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 px-4 py-3 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-white/[0.05] focus:border-sky-500 dark:focus:border-sky-500/50 focus:outline-none focus:ring-4 focus:ring-sky-500/15 transition-all font-medium backdrop-blur-sm"
           />
           <button
             type="button"
