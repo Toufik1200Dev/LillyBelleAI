@@ -35,9 +35,16 @@ Backend SharePoint search + n8n — steps
    Try: {{ $json.message }} or {{ $json.body.message }} depending on Webhook options.
 
 6) Response shape (feed to AI Agent as context only)
-   success, data.hits[], data.count, data.query, data.compact (if compact was true)
+   success, data.hits[], data.count, data.query (texte utilisateur d’origine),
+   data.resolvedQuery (identifiant extrait — ex. après « fichier : … »), data.compact
    Full hits: title, folder, url, lastModified, size, score, category
    With "compact": true: title, folder, url only
+   Recherche : le backend résout les phrases du type « donne le fichier : CODE » pour
+   n’envoyer à Postgres que CODE (sinon ILIKE ne correspond à aucun titre).
+
+6b) Classement des noms de fichier
+   Après 004, exécuter database/005_sharepoint_search_ranking.sql dans Supabase pour
+   privilégier titre = code, préfixe et sous-chaîne exacts.
 
 7) Reindex after new SharePoint export (local dev uses src/n8n-data)
    npm run search-metadata -- --reindex

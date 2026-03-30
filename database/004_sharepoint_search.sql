@@ -88,3 +88,5 @@ AS $$
   ORDER BY ranked.score DESC, ranked."lastModified" DESC NULLS LAST
   LIMIT GREATEST(1, LEAST(coalesce(lim, 15), 100));
 $$;
+
+-- Prefer applying 005_sharepoint_search_ranking.sql for stronger filename / PO-style ranking.

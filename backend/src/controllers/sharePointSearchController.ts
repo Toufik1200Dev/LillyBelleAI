@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getN8nDataDir } from '../config/n8nDataDir';
 import { env } from '../config/env';
 import { searchSharepointDocs, type SharepointSearchHit } from '../services/sharepointSearchDb';
+import { resolveSharepointSearchQuery } from '../utils/sharepointQueryExtract';
 
 function compactHits(hits: SharepointSearchHit[]): Array<{ title: string; folder: string; url: string }> {
   return hits.map((h) => ({
@@ -115,7 +116,8 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
   try {
     if (!assertInternalKey(req, res)) return;
     const parsed = searchBodySchema.parse(req.body);
-    searchSharepointDocs(parsed.query, parsed.categories, parsed.limit ?? 15)
+    const { resolved, original } = resolveSharepointSearchQuery(parsed.query);
+    searchSharepointDocs(resolved, parsed.categories, parsed.limit ?? 15)
       .then((hits) => {
         const payloadHits = parsed.compact ? compactHits(hits) : hits;
         res.json({
@@ -123,7 +125,8 @@ export function postSharePointSearch(req: Request, res: Response, next: NextFunc
           data: {
             hits: payloadHits,
             count: payloadHits.length,
-            query: parsed.query,
+            query: original,
+            resolvedQuery: resolved,
             compact: Boolean(parsed.compact),
           },
         });
