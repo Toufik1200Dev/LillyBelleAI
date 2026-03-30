@@ -1,4 +1,4 @@
-'use strict';
+ 'use strict';
 
 /**
  * SharePoint metadata search: inverted index (titleIndex, folderIndex, byCategory)
