@@ -15,8 +15,15 @@
 const path = require('path');
 const ss = require('./sharepoint-search');
 
-const DATA_FILE = path.join(__dirname, 'sharepoint_metadata.json');
-const INDEX_FILE = path.join(__dirname, 'index.json');
+function resolveDataDir() {
+  const fromEnv = (process.env.N8N_DATA_DIR || '').trim();
+  if (fromEnv) return path.resolve(fromEnv);
+  return __dirname;
+}
+
+const DATA_DIR = resolveDataDir();
+const DATA_FILE = path.join(DATA_DIR, 'sharepoint_metadata.json');
+const INDEX_FILE = path.join(DATA_DIR, 'index.json');
 
 /**
  * @param {string} query
