@@ -22,8 +22,8 @@
               "value": "application/json"
             },
             {
-              "name": "X-Internal-Search-Key",
-              "value": "REPLACE_WITH_SAME_KEY_AS_BACKEND_ENV"
+              "name": "x-internal-api-key",
+              "value": "REPLACE_WITH_INTERNAL_API_KEY_FROM_BACKEND"
             }
           ]
         },

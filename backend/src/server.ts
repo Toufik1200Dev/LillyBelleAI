@@ -9,6 +9,7 @@ import { getN8nDataDir } from './config/n8nDataDir';
 import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
 import { rateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
+import { requireInternalApiKey } from './middleware/requireInternalApiKey';
 import conversationsRouter from './routes/conversations';
 import chatRouter from './routes/chat';
 import {
@@ -24,7 +25,12 @@ app.use(cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Search-Key'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Internal-Search-Key',
+    'x-internal-api-key',
+  ],
 }));
 
 // ─── Body parsing ──────────────────────────────────────────────────────────────
@@ -37,7 +43,7 @@ app.get('/health', (_req, res) => {
 });
 
 // ─── SharePoint metadata search (n8n / automation, no user JWT) ───────────────
-app.post('/api/internal/sharepoint-search', postSharePointSearch);
+app.post('/api/internal/sharepoint-search', requireInternalApiKey, postSharePointSearch);
 app.post('/api/internal/sharepoint-search/reindex', postSharePointReindex);
 
 // ─── Auth + Rate limit all /api routes ───────────────────────────────────────

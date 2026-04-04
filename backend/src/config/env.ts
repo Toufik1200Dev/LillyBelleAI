@@ -13,10 +13,12 @@ export const env = {
   /** Number of retries for timeout/abort or 5xx responses from n8n. */
   N8N_MAX_RETRIES: parseInt(process.env.N8N_MAX_RETRIES ?? '1', 10),
   /**
-   * Secret for POST /api/internal/sharepoint-search. If non-empty, this value is used (not N8N_API_KEY).
-   * n8n Header Auth must match THIS var when set on Render; otherwise match N8N_API_KEY.
+   * Secret for POST /api/internal/sharepoint-search/reindex. If non-empty, used instead of N8N_API_KEY.
+   * Header: X-Internal-Search-Key (or Bearer). Search uses INTERNAL_API_KEY + x-internal-api-key.
    */
   SHAREPOINT_SEARCH_INTERNAL_KEY: (process.env.SHAREPOINT_SEARCH_INTERNAL_KEY ?? '').trim(),
+  /** API key for POST /api/internal/sharepoint-search (header x-internal-api-key). */
+  INTERNAL_API_KEY: (process.env.INTERNAL_API_KEY ?? '').trim(),
   /** Optional override for the folder containing sharepoint_metadata.json (default: src/n8n-data). */
   N8N_DATA_DIR: process.env.N8N_DATA_DIR ?? '',
   CORS_ORIGIN: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').replace(/\/$/, ''),

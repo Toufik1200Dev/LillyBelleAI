@@ -118,7 +118,6 @@ function isMissingDataError(err: unknown): boolean {
 
 export function postSharePointSearch(req: Request, res: Response, next: NextFunction): void {
   try {
-    if (!assertInternalKey(req, res)) return;
     const parsed = searchBodySchema.parse(req.body);
     const { resolved, original } = resolveSharepointSearchQuery(parsed.query);
     searchSharepointDocs(resolved, parsed.categories, parsed.limit ?? 15)
