@@ -48,16 +48,20 @@ export function MessageBubble({ message, isUser, showAvatar = true, onRetry }: M
       <div className={clsx('flex max-w-[85%] items-start gap-4', isUser && 'flex-row-reverse')}>
         {/* Avatar */}
         {showAvatar ? (
-          <div
-            className={clsx(
-              'flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold shadow-sm border transition-all duration-500 group-hover:scale-105',
-              isUser
-                ? 'bg-sky-100 dark:bg-sky-500/20 border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 shadow-sky-500/5'
-                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 shadow-slate-200/5'
-            )}
-          >
-            {isUser ? <User className="h-5.5 w-5.5" /> : <Logo showText={false} className="scale-50" />}
-          </div>
+          isUser ? (
+            <div
+              className={clsx(
+                'flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold shadow-sm border transition-all duration-500 group-hover:scale-105',
+                'bg-sky-100 dark:bg-sky-500/20 border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 shadow-sky-500/5'
+              )}
+            >
+              <User className="h-5.5 w-5.5" />
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 flex-shrink-0 items-start justify-center pt-0.5 -translate-x-5">
+              <Logo showText={false} plain size="sm" className="!gap-0 scale-[0.52] origin-top" />
+            </div>
+          )
         ) : (
           <div className="w-10 flex-shrink-0" />
         )}

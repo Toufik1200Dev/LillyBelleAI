@@ -106,6 +106,9 @@ npm run dev                  # Runs on http://localhost:5173
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
 | `VITE_API_URL` | Backend URL (default: `http://localhost:3000/api`) |
 
+**Login fails with `ERR_NAME_NOT_RESOLVED` / `your-project.supabase.co`:**  
+`VITE_*` variables are baked in at **build** time. Replace placeholders in `frontend/.env` with your real **Project URL** and **anon** key from Supabase, run `npm run dev` again locally, or rebuild (`npm run build`) before deploying Firebase Hosting.
+
 ## API Endpoints
 
 | Method | Endpoint | Description |

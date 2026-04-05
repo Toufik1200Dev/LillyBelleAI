@@ -5,9 +5,11 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  /** No hover glow — use in compact chat avatars */
+  plain?: boolean;
 }
 
-export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
+export function Logo({ className, showText = true, size = 'md', plain = false }: LogoProps) {
   const textSizes = {
     sm: 'text-lg',
     md: 'text-xl',
@@ -22,15 +24,16 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
 
   return (
     <div className={clsx('flex items-center gap-4 transition-colors duration-500', className)}>
-      <div className="relative flex-shrink-0 group/logo">
-        {/* Premium Ambient Glow */}
-        <div className="absolute inset-[-10px] bg-sky-500/10 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-500" />
-        
+      <div className={clsx('relative flex-shrink-0', !plain && 'group/logo')}>
+        {!plain && (
+          <div className="absolute inset-[-10px] bg-sky-500/10 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-500" />
+        )}
         <img
           src={logoImg}
           alt="LillyBelle AI"
           className={clsx(
-            'relative w-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-transform group-hover/logo:scale-105 duration-300',
+            'relative w-auto transition-transform duration-300',
+            !plain && 'drop-shadow-[0_10px_20px_rgba(0,0,0,0.1)] group-hover/logo:scale-105',
             imgSizes[size]
           )}
         />
