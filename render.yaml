@@ -1,0 +1,25 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# After linking the repo, set secrets in the dashboard (never commit real keys).
+
+services:
+  - type: web
+    name: lillybelle-ai-chat
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: bash scripts/render-start.sh
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: N8N_DATA_DIR
+        value: /tmp/n8n
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: N8N_WEBHOOK_URL
+        sync: false
+      - key: INTERNAL_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

@@ -106,6 +106,20 @@ npm run dev                  # Runs on http://localhost:5173
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
 | `VITE_API_URL` | Backend URL (default: `http://localhost:3000/api`) |
 
+### Deploy backend on Render
+
+1. **Start command** (replace any long inline `curl` bash one-liner):
+   ```bash
+   bash scripts/render-start.sh
+   ```
+   Root directory: `backend`. Build: `npm install && npm run build`.
+
+2. **`SUPABASE_URL`** must be the exact **Project URL** from Supabase → Settings → API (e.g. `https://abcdefgh.supabase.co`). If DNS cannot resolve the host, fix the URL — a typo will break auth, search, and optional metadata download.
+
+3. SharePoint **search** uses the **Supabase database** (`search_sharepoint_docs`). Downloading `sharepoint_metadata.json` at startup is **optional** (only for `/reindex`).
+
+4. Or use the repo **`render.yaml`** blueprint at the project root.
+
 **Login fails with `ERR_NAME_NOT_RESOLVED` / `your-project.supabase.co`:**  
 `VITE_*` variables are baked in at **build** time. Replace placeholders in `frontend/.env` with your real **Project URL** and **anon** key from Supabase, run `npm run dev` again locally, or rebuild (`npm run build`) before deploying Firebase Hosting.
 
