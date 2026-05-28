@@ -86,9 +86,34 @@ npm run dev                  # Runs on http://localhost:3000
 |---|---|
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (never expose publicly) |
-| `N8N_WEBHOOK_URL` | Your n8n webhook endpoint |
-| `N8N_API_KEY` | Optional API key for webhook auth |
+| `GEMINI_API_KEY` | Gemini API key (server-side only, never expose in frontend) |
+| `GEMINI_MODEL` | Gemini model name (default: `gemini-2.5-flash`) |
 | `CORS_ORIGIN` | Frontend URL (default: `http://localhost:5173`) |
+
+Optional legacy variables (only if keeping fallback n8n path): `N8N_WEBHOOK_URL`, `N8N_API_KEY`.
+
+### Import large SharePoint JSON parts
+
+For split exports (for example 3 files of ~50MB each), import all parts directly:
+
+```bash
+cd backend
+npm run import-sharepoint-docs -- "../../Downloads/sharepoint_metadata.valid.part01.json" "../../Downloads/sharepoint_metadata.valid.part02.json" "../../Downloads/sharepoint_metadata.valid.part03.json"
+```
+
+The importer upserts in chunks and accepts multiple input files.
+
+For faster refreshes, use incremental mode (only changed files since a timestamp):
+
+```bash
+npm run import-sharepoint-docs -- --since=2026-03-01T00:00:00Z "../../Downloads/sharepoint_metadata.valid.part01.json" "../../Downloads/sharepoint_metadata.valid.part02.json" "../../Downloads/sharepoint_metadata.valid.part03.json"
+```
+
+You can tune chunk size (default `2000`) if needed:
+
+```bash
+npm run import-sharepoint-docs -- --chunk=3000 "../../Downloads/sharepoint_metadata.valid.part01.json"
+```
 
 ### 4. Frontend Setup
 

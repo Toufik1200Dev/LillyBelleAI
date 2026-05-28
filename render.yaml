@@ -17,6 +17,22 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: AGENT_CONTEXT_WINDOW
+        value: "6"
+      - key: AGENT_MAX_TOOL_CALLS
+        value: "2"
+      - key: AGENT_TIMEOUT_MS
+        value: "30000"
+      - key: AGENT_MAX_OUTPUT_TOKENS
+        value: "1024"
+      - key: AGENT_DEBUG_LOGS
+        value: "false"
+      - key: DISABLE_N8N_PATH
+        value: "true"
       - key: N8N_WEBHOOK_URL
         sync: false
       - key: INTERNAL_API_KEY
