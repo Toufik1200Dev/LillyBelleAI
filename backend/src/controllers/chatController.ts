@@ -16,7 +16,8 @@ function countSearchHitsFromMetadata(metadata: Record<string, unknown> | undefin
   return 0;
 }
 
-const APOLOGY_DESPITE_HITS = /aucune information|pas d['']informations?|rien dans le contexte|non disponible dans le contexte|malheureusement,?\s*aucun|aucun document.*contexte|désol[ée].{0,80}(pas|aucune|impossible)/i;
+const APOLOGY_DESPITE_HITS =
+  /aucune information|pas d['']informations?|rien dans le contexte|non disponible dans le contexte|malheureusement,?\s*aucun|aucun document.*contexte|désol[ée].{0,80}(pas|aucune|impossible)|no (information|documents?|results?|files?) (found|available|in the context)|unfortunately,?\s*(no|i couldn't|i cannot|i was unable)|i (don't|do not|couldn't|cannot) (find|locate|see|access).{0,60}(document|file|result)/i;
 
 function assistantTextWhenHitsExistButModelApologized(
   text: string,
