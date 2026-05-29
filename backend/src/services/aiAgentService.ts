@@ -55,37 +55,60 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
 
 interface OpenRouterResponse {
   choices?: Array<{ message?: { content?: string } }>;
+  error?: { metadata?: { retry_after_seconds?: number } };
 }
 
+const OPENROUTER_MAX_RETRIES = 3;
+
 async function callOpenRouter(prompt: string): Promise<string> {
-  const response = await runWithTimeout(
-    fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://lillybelle.eu',
-        'X-Title': 'LillyBelle AI Assistant',
-      },
-      body: JSON.stringify({
-        model: env.OPENROUTER_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: env.AGENT_MAX_OUTPUT_TOKENS,
-        temperature: 0.4,
+  let lastError = '';
+  for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt++) {
+    const response = await runWithTimeout(
+      fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://lillybelle.eu',
+          'X-Title': 'LillyBelle AI Assistant',
+        },
+        body: JSON.stringify({
+          model: env.OPENROUTER_MODEL,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: env.AGENT_MAX_OUTPUT_TOKENS,
+          temperature: 0.4,
+        }),
       }),
-    }),
-    env.AGENT_TIMEOUT_MS
-  );
+      env.AGENT_TIMEOUT_MS
+    );
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`OpenRouter API error ${response.status}: ${body}`);
+    if (response.status === 429) {
+      const body = await response.text().catch(() => '{}');
+      lastError = body;
+      if (attempt < OPENROUTER_MAX_RETRIES) {
+        let retryAfterMs = 5000;
+        try {
+          const parsed = JSON.parse(body) as OpenRouterResponse;
+          const secs = parsed.error?.metadata?.retry_after_seconds;
+          if (typeof secs === 'number') retryAfterMs = Math.ceil(secs) * 1000 + 500;
+        } catch { /* use default */ }
+        await new Promise((r) => setTimeout(r, retryAfterMs));
+        continue;
+      }
+      throw new Error(`OpenRouter rate limited after ${OPENROUTER_MAX_RETRIES} attempts: ${body}`);
+    }
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`OpenRouter API error ${response.status}: ${body}`);
+    }
+
+    const data = (await response.json()) as OpenRouterResponse;
+    const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+    if (!text) throw new Error('OpenRouter returned empty content');
+    return text;
   }
-
-  const data = (await response.json()) as OpenRouterResponse;
-  const text = data.choices?.[0]?.message?.content?.trim() ?? '';
-  if (!text) throw new Error('OpenRouter returned empty content');
-  return text;
+  throw new Error(`OpenRouter failed after ${OPENROUTER_MAX_RETRIES} attempts: ${lastError}`);
 }
 
 function buildPrompt(args: {
