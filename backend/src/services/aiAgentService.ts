@@ -128,9 +128,11 @@ function buildPrompt(args: {
 
   const resultsBlock = args.hasResults
     ? [
-        'SharePoint results were found. Summarize them briefly and cite each document as [Title](URL) with its folder.',
-        'Tell the user what each document likely contains based on its title and folder.',
-        'Be helpful and direct — the user cannot see file contents, only titles/folders/links.',
+        'SharePoint documents were found. You MUST include every document as a clickable markdown link in your reply.',
+        'Format REQUIRED for each document: [Document Title](URL) — Folder: <folder name>',
+        'List ALL documents from the SharePoint results below. Do NOT omit any link.',
+        'After listing the links, add a short description of what each document likely contains based on its title and folder.',
+        'CRITICAL: never skip the links. A response without markdown links is WRONG.',
       ].join('\n')
     : [
         'No exact SharePoint results were found for this query.',
@@ -171,7 +173,9 @@ function buildPrompt(args: {
     `SharePoint results:\n${args.sourcesText || '(none)'}`,
     '',
     '=== RESPONSE ===',
-    '(Reply now, matching the user\'s language and tone. Be concise, actionable, and helpful.)',
+    args.hasResults
+      ? '(Reply now. You MUST include every SharePoint document as a markdown link [Title](URL). No links = invalid response.)'
+      : '(Reply now, matching the user\'s language and tone. Be concise, actionable, and helpful.)',
   ].join('\n');
 }
 
