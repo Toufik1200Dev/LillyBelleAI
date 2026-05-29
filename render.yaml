@@ -17,10 +17,10 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: GEMINI_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
-      - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini:free
       - key: AGENT_CONTEXT_WINDOW
         value: "6"
       - key: AGENT_MAX_TOOL_CALLS

@@ -28,17 +28,17 @@ export const env = {
   N8N_TIMEOUT_MS: envInt('N8N_TIMEOUT_MS', 90000),
   /** Number of retries for timeout/abort or 5xx responses from n8n. */
   N8N_MAX_RETRIES: envInt('N8N_MAX_RETRIES', 1),
-  /** Gemini API key for the in-code AI orchestration. */
-  GEMINI_API_KEY: envString('GEMINI_API_KEY'),
+  /** OpenRouter API key for the in-code AI orchestration. */
+  OPENROUTER_API_KEY: envString('OPENROUTER_API_KEY'),
   /** Default model for the in-code AI orchestration. */
-  GEMINI_MODEL: envString('GEMINI_MODEL', 'gemini-2.5-flash'),
+  OPENROUTER_MODEL: envString('OPENROUTER_MODEL', 'openai/gpt-4o-mini:free'),
   /** Number of user+assistant turn pairs loaded as chat memory. */
   AGENT_CONTEXT_WINDOW: envInt('AGENT_CONTEXT_WINDOW', 6),
   /** Max search attempts (initial + fallback). */
   AGENT_MAX_TOOL_CALLS: envInt('AGENT_MAX_TOOL_CALLS', 2),
-  /** Gemini call timeout in milliseconds. */
+  /** LLM call timeout in milliseconds. */
   AGENT_TIMEOUT_MS: envInt('AGENT_TIMEOUT_MS', 30000),
-  /** Max output tokens used for Gemini generation. */
+  /** Max output tokens for LLM generation. */
   AGENT_MAX_OUTPUT_TOKENS: envInt('AGENT_MAX_OUTPUT_TOKENS', 1024),
   /** Optional: verbose orchestration logs in backend console. */
   AGENT_DEBUG_LOGS: envBool('AGENT_DEBUG_LOGS', false),
@@ -60,7 +60,7 @@ export const env = {
 } as const;
 
 // Validate required env vars on startup
-const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'GEMINI_API_KEY'];
+const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENROUTER_API_KEY'];
 for (const key of required) {
   if (!envString(key)) {
     throw new Error(`Missing required environment variable: ${key}`);

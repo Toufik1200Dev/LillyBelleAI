@@ -23,13 +23,6 @@ interface AgentResult {
   metadata: AgentMetadata;
 }
 
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
-  }>;
-}
 
 function firstWords(text: string, count: number): string {
   return text.split(/\s+/).filter(Boolean).slice(0, count).join(' ').trim();
@@ -60,19 +53,25 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
   }
 }
 
-async function callGemini(prompt: string): Promise<string> {
-  const model = env.GEMINI_MODEL;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
+interface OpenRouterResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+}
+
+async function callOpenRouter(prompt: string): Promise<string> {
   const response = await runWithTimeout(
-    fetch(url, {
+    fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://lillybelle.eu',
+        'X-Title': 'LillyBelle AI Assistant',
+      },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: env.AGENT_MAX_OUTPUT_TOKENS,
-        },
+        model: env.OPENROUTER_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: env.AGENT_MAX_OUTPUT_TOKENS,
+        temperature: 0.4,
       }),
     }),
     env.AGENT_TIMEOUT_MS
@@ -80,15 +79,12 @@ async function callGemini(prompt: string): Promise<string> {
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');
-    throw new Error(`Gemini API error ${response.status}: ${body}`);
+    throw new Error(`OpenRouter API error ${response.status}: ${body}`);
   }
-  const data = (await response.json()) as GeminiResponse;
-  const text =
-    data.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text ?? '')
-      .join('')
-      .trim() ?? '';
-  if (!text) throw new Error('Gemini returned empty content');
+
+  const data = (await response.json()) as OpenRouterResponse;
+  const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+  if (!text) throw new Error('OpenRouter returned empty content');
   return text;
 }
 
@@ -206,7 +202,7 @@ export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> 
     hasResults: compact.length > 0,
     language,
   });
-  const responseText = await callGemini(prompt);
+  const responseText = await callOpenRouter(prompt);
 
   if (env.AGENT_DEBUG_LOGS) {
     console.log('[aiAgentService] query=', normalized.searchQuery, 'hits=', compact.length, 'lang=', language);
