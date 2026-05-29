@@ -31,7 +31,7 @@ export const env = {
   /** OpenRouter API key for the in-code AI orchestration. */
   OPENROUTER_API_KEY: envString('OPENROUTER_API_KEY'),
   /** Default model for the in-code AI orchestration. */
-  OPENROUTER_MODEL: envString('OPENROUTER_MODEL', 'openai/gpt-4o-mini:free'),
+  OPENROUTER_MODEL: envString('OPENROUTER_MODEL', 'deepseek/deepseek-chat'),
   /** Number of user+assistant turn pairs loaded as chat memory. */
   AGENT_CONTEXT_WINDOW: envInt('AGENT_CONTEXT_WINDOW', 6),
   /** Max search attempts (initial + fallback). */
