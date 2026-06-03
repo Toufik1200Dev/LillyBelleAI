@@ -53,30 +53,29 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
   }
 }
 
-interface OpenRouterResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-  error?: { metadata?: { retry_after_seconds?: number } };
+interface AnthropicMessageResponse {
+  content?: Array<{ type: string; text?: string }>;
+  error?: { type?: string; message?: string };
 }
 
-const OPENROUTER_MAX_RETRIES = 3;
+const CLAUDE_MAX_RETRIES = 3;
 
-async function callOpenRouter(prompt: string): Promise<string> {
+async function callClaude(prompt: string): Promise<string> {
   let lastError = '';
-  for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= CLAUDE_MAX_RETRIES; attempt++) {
     const response = await runWithTimeout(
-      fetch('https://openrouter.ai/api/v1/chat/completions', {
+      fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://lillybelle.eu',
-          'X-Title': 'LillyBelle AI Assistant',
+          'x-api-key': env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: env.OPENROUTER_MODEL,
-          messages: [{ role: 'user', content: prompt }],
+          model: env.CLAUDE_MODEL,
           max_tokens: env.AGENT_MAX_OUTPUT_TOKENS,
           temperature: 0.4,
+          messages: [{ role: 'user', content: prompt }],
         }),
       }),
       env.AGENT_TIMEOUT_MS
@@ -85,30 +84,29 @@ async function callOpenRouter(prompt: string): Promise<string> {
     if (response.status === 429) {
       const body = await response.text().catch(() => '{}');
       lastError = body;
-      if (attempt < OPENROUTER_MAX_RETRIES) {
-        let retryAfterMs = 5000;
-        try {
-          const parsed = JSON.parse(body) as OpenRouterResponse;
-          const secs = parsed.error?.metadata?.retry_after_seconds;
-          if (typeof secs === 'number') retryAfterMs = Math.ceil(secs) * 1000 + 500;
-        } catch { /* use default */ }
-        await new Promise((r) => setTimeout(r, retryAfterMs));
+      if (attempt < CLAUDE_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, 5000 * attempt));
         continue;
       }
-      throw new Error(`OpenRouter rate limited after ${OPENROUTER_MAX_RETRIES} attempts: ${body}`);
+      throw new Error(`Claude rate limited after ${CLAUDE_MAX_RETRIES} attempts: ${body}`);
     }
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new Error(`OpenRouter API error ${response.status}: ${body}`);
+      throw new Error(`Claude API error ${response.status}: ${body}`);
     }
 
-    const data = (await response.json()) as OpenRouterResponse;
-    const text = data.choices?.[0]?.message?.content?.trim() ?? '';
-    if (!text) throw new Error('OpenRouter returned empty content');
+    const data = (await response.json()) as AnthropicMessageResponse;
+    const text =
+      data.content
+        ?.filter((block) => block.type === 'text')
+        .map((block) => block.text ?? '')
+        .join('')
+        .trim() ?? '';
+    if (!text) throw new Error('Claude returned empty content');
     return text;
   }
-  throw new Error(`OpenRouter failed after ${OPENROUTER_MAX_RETRIES} attempts: ${lastError}`);
+  throw new Error(`Claude failed after ${CLAUDE_MAX_RETRIES} attempts: ${lastError}`);
 }
 
 function buildPrompt(args: {
@@ -229,7 +227,7 @@ export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> 
     hasResults: compact.length > 0,
     language,
   });
-  const responseText = await callOpenRouter(prompt);
+  const responseText = await callClaude(prompt);
 
   if (env.AGENT_DEBUG_LOGS) {
     console.log('[aiAgentService] query=', normalized.searchQuery, 'hits=', compact.length, 'lang=', language);

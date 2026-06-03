@@ -28,10 +28,10 @@ export const env = {
   N8N_TIMEOUT_MS: envInt('N8N_TIMEOUT_MS', 90000),
   /** Number of retries for timeout/abort or 5xx responses from n8n. */
   N8N_MAX_RETRIES: envInt('N8N_MAX_RETRIES', 1),
-  /** OpenRouter API key for the in-code AI orchestration. */
-  OPENROUTER_API_KEY: envString('OPENROUTER_API_KEY'),
-  /** Default model for the in-code AI orchestration. */
-  OPENROUTER_MODEL: envString('OPENROUTER_MODEL', 'deepseek/deepseek-chat'),
+  /** Anthropic API key for Claude (server-side only). */
+  ANTHROPIC_API_KEY: envString('ANTHROPIC_API_KEY'),
+  /** Claude model id — see https://docs.anthropic.com/en/docs/about-claude/models */
+  CLAUDE_MODEL: envString('CLAUDE_MODEL', 'claude-sonnet-4-20250514'),
   /** Number of user+assistant turn pairs loaded as chat memory. */
   AGENT_CONTEXT_WINDOW: envInt('AGENT_CONTEXT_WINDOW', 6),
   /** Max search attempts (initial + fallback). */
@@ -60,7 +60,7 @@ export const env = {
 } as const;
 
 // Validate required env vars on startup
-const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENROUTER_API_KEY'];
+const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ANTHROPIC_API_KEY'];
 for (const key of required) {
   if (!envString(key)) {
     throw new Error(`Missing required environment variable: ${key}`);

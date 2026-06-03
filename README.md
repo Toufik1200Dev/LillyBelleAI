@@ -86,8 +86,8 @@ npm run dev                  # Runs on http://localhost:3000
 |---|---|
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (never expose publicly) |
-| `GEMINI_API_KEY` | Gemini API key (server-side only, never expose in frontend) |
-| `GEMINI_MODEL` | Gemini model name (default: `gemini-2.5-flash`) |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude (server-side only, never expose in frontend) |
+| `CLAUDE_MODEL` | Claude model id (default: `claude-sonnet-4-20250514`) |
 | `CORS_ORIGIN` | Frontend URL (default: `http://localhost:5173`) |
 
 Optional legacy variables (only if keeping fallback n8n path): `N8N_WEBHOOK_URL`, `N8N_API_KEY`.
