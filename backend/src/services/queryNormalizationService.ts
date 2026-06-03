@@ -1,3 +1,5 @@
+import { resolveSharepointSearchQuery } from '../utils/sharepointQueryExtract';
+
 const FILLER_PHRASES = [
   'donne moi',
   'donnez moi',
@@ -29,6 +31,13 @@ const FILLER_PHRASES = [
   'svp',
   'stp',
   'merci',
+  'numero de commande',
+  'numero commande',
+  'le numero',
+  'cette opportunite',
+  'cette opportunity',
+  'de cette',
+  'de ce',
   // English fillers
   'can you find',
   'can you show',
@@ -77,7 +86,12 @@ export type Language = 'fr' | 'en' | 'mixed';
 
 export interface NormalizedQuery {
   rawMessage: string;
+  /** Primary query sent to search (best identifier or normalized text). */
   searchQuery: string;
+  /** Ordered variants tried until hits are found. */
+  searchQueries: string[];
+  /** When message mentions opportunities, narrow SharePoint category. */
+  preferOpportunitiesCategory: boolean;
   isGreeting: boolean;
 }
 
@@ -121,6 +135,65 @@ function detectGreeting(rawMessage: string): boolean {
 }
 
 /** Detects the primary language of a message */
+/** Extract opportunity refs, PO codes, etc. from raw text before hyphen/accents are stripped. */
+export function extractIdentifiers(rawMessage: string): string[] {
+  const found = new Set<string>();
+  const raw = rawMessage.trim();
+
+  // Explicit separator variants: 2601-d7691 | 2601/d7691 | 2601_d7691 | 2601 - d7691
+  for (const match of raw.matchAll(/\b(\d{4})\s*[-\/_]\s*([a-z0-9]{3,})\b/gi)) {
+    found.add(`${match[1]}-${match[2]}`.toLowerCase());
+  }
+
+  // n° / n° prefix with any or no separator: "n°2601-d7691", "n° 2601 d7691", "n° 2601-d7691"
+  // Right part pattern [a-z]\d{2,} avoids matching common words (e.g. "document", "dossier")
+  for (const match of raw.matchAll(/n[°º]\s*(\d{4})\s*[-\/_]?\s*([a-z]\d{2,})\b/gi)) {
+    found.add(`${match[1]}-${match[2]}`.toLowerCase());
+  }
+
+  // Pure-space separator when right part looks like a ref suffix: letter + 2+ digits (e.g. "d7691")
+  // This won't match "2601 document" because "document" doesn't match [a-z]\d{2,}
+  for (const match of raw.matchAll(/\b(\d{4})\s+([a-z]\d{2,})\b/gi)) {
+    found.add(`${match[1]}-${match[2]}`.toLowerCase());
+  }
+
+  const { resolved } = resolveSharepointSearchQuery(raw);
+  if (resolved.length >= 4 && /\d/.test(resolved)) {
+    found.add(resolved.replace(/\s+/g, ' ').trim());
+  }
+
+  return [...found];
+}
+
+export function buildSearchQueries(rawMessage: string): string[] {
+  const identifiers = extractIdentifiers(rawMessage);
+  const normalized = normalizeText(rawMessage);
+  const withoutFillers = stripFillers(normalized);
+  const expanded = expandTokens(withoutFillers);
+
+  const candidates: string[] = [];
+
+  for (const id of identifiers) {
+    candidates.push(id);                         // canonical: "2601-d7691"
+    if (id.includes('-')) {
+      const [left, right] = id.split('-');
+      candidates.push(`${left} ${right}`);       // space variant: "2601 d7691"
+      candidates.push(`${left}/${right}`);       // slash variant: "2601/d7691"
+      // Right part alone (e.g. "d7691") is specific enough to be useful.
+      // Left part alone (e.g. "2601") is a 4-digit year-month prefix that matches hundreds of
+      // unrelated accounting filenames — skip it to avoid noisy results.
+      if (right && right.length >= 3) candidates.push(right);
+      if (left && left.length >= 3 && !/^\d{4}$/.test(left)) candidates.push(left);
+    }
+  }
+
+  if (expanded.length >= 3) candidates.push(expanded);
+  if (withoutFillers.length >= 3 && withoutFillers !== expanded) candidates.push(withoutFillers);
+
+  const deduped = [...new Set(candidates.map((c) => c.trim()).filter((c) => c.length >= 3))];
+  return deduped.slice(0, 8);
+}
+
 export function detectLanguage(text: string): Language {
   const hasFr = FR_PATTERN.test(text);
   const hasEn = EN_PATTERN.test(text);
@@ -131,12 +204,13 @@ export function detectLanguage(text: string): Language {
 
 export function normalizeQuery(rawMessage: string): NormalizedQuery {
   const cleaned = rawMessage.trim();
-  const normalized = normalizeText(cleaned);
-  const withoutFillers = stripFillers(normalized);
-  const expanded = expandTokens(withoutFillers);
+  const searchQueries = buildSearchQueries(cleaned);
+  const preferOpportunitiesCategory = /\bopportunit/i.test(cleaned);
   return {
     rawMessage: cleaned,
-    searchQuery: expanded || normalized || cleaned,
+    searchQuery: searchQueries[0] ?? cleaned,
+    searchQueries: searchQueries.length > 0 ? searchQueries : [cleaned],
+    preferOpportunitiesCategory,
     isGreeting: detectGreeting(cleaned),
   };
 }

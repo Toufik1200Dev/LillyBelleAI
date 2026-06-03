@@ -24,8 +24,22 @@ interface AgentResult {
 }
 
 
-function firstWords(text: string, count: number): string {
-  return text.split(/\s+/).filter(Boolean).slice(0, count).join(' ').trim();
+async function runSharepointSearch(
+  queries: string[],
+  preferOpportunitiesCategory: boolean
+): Promise<{ hits: SharepointSearchHit[]; usedQuery: string }> {
+  const categories = preferOpportunitiesCategory ? (['OPPORTUNITIES'] as string[]) : undefined;
+  for (let i = 0; i < Math.min(queries.length, 8); i++) {
+    const q = queries[i];
+    let hits = await searchSharepointDocs(q, categories, 10);
+    if (hits.length === 0 && categories) {
+      hits = await searchSharepointDocs(q, undefined, 10);
+    }
+    if (hits.length > 0) return { hits, usedQuery: q };
+  }
+
+  const last = queries[queries.length - 1] ?? '';
+  return { hits: [], usedQuery: last };
 }
 
 function compactHits(hits: SharepointSearchHit[]): Array<{ title: string; folder: string; url: string }> {
@@ -159,7 +173,7 @@ function buildPrompt(args: {
     '',
     '--- SHAREPOINT RULES ---',
     resultsBlock,
-    'You can only see document title, folder, and URL — NOT the file contents.',
+    'If the user asks for a "numéro de commande", "order number", or similar: when matching documents exist, list them with links and explain the number is likely inside the document (user must open the link). Do NOT say "no documents" if relevant files were returned.',
     'NEVER invent or fabricate document links or titles.',
     '',
     '=== CONVERSATION ===',
@@ -205,23 +219,18 @@ export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> 
     };
   }
 
-  const attempts = Math.max(1, env.AGENT_MAX_TOOL_CALLS);
-  const primaryQuery = normalized.searchQuery;
-  const fallbackQuery = firstWords(primaryQuery, 3);
-
-  let hits = await searchSharepointDocs(primaryQuery, undefined, 8);
-  let usedFallback = false;
-  if (hits.length === 0 && attempts > 1 && fallbackQuery && fallbackQuery !== primaryQuery) {
-    hits = await searchSharepointDocs(fallbackQuery, undefined, 8);
-    usedFallback = true;
-  }
+  const { hits, usedQuery } = await runSharepointSearch(
+    normalized.searchQueries,
+    normalized.preferOpportunitiesCategory
+  );
+  const usedFallback = usedQuery !== normalized.searchQueries[0];
 
   const compact = compactHits(hits).slice(0, 5);
   const historyText = formatHistory(history);
   const sourcesText = formatSources(compact);
   const prompt = buildPrompt({
     rawMessage: normalized.rawMessage,
-    searchQuery: usedFallback ? fallbackQuery : primaryQuery,
+    searchQuery: usedQuery,
     sourcesText,
     historyText,
     hasResults: compact.length > 0,
@@ -239,8 +248,9 @@ export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> 
       sources: compact.map((h) => ({ title: h.title, url: h.url, snippet: h.folder })),
       totalHits: hits.length,
       returnedCount: compact.length,
-      searchQuery: primaryQuery,
-      fallbackSearchQuery: usedFallback ? fallbackQuery : undefined,
+      searchQuery: usedQuery,
+      fallbackSearchQuery: usedFallback ? usedQuery : undefined,
+      searchQueriesTried: normalized.searchQueries,
       searchAttempted: true,
     },
   };
