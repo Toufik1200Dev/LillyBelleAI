@@ -63,8 +63,8 @@ export const env = {
   AZURE_CLIENT_SECRET: envString('AZURE_CLIENT_SECRET'),
   /** Optional: scope Graph search to a specific SharePoint site ID. */
   SHAREPOINT_SITE_ID: envString('SHAREPOINT_SITE_ID'),
-  /** Graph Search API region — required for app-only (client credentials) auth. EUR | NAM | APC */
-  GRAPH_SEARCH_REGION: envString('GRAPH_SEARCH_REGION', 'EUR'),
+  /** Graph Search API region — required for app-only (client credentials) auth. EMEA | NAM | APC */
+  GRAPH_SEARCH_REGION: envString('GRAPH_SEARCH_REGION', 'EMEA'),
 } as const;
 
 // Validate required env vars on startup
