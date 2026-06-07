@@ -16,6 +16,7 @@ import {
   postSharePointReindex,
   postSharePointSearch,
 } from './controllers/sharePointSearchController';
+import { postGraphSearch, postGraphFile } from './controllers/graphController';
 
 const app = express();
 
@@ -53,6 +54,10 @@ app.use('/api', rateLimiter);
 // ─── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/conversations', conversationsRouter);
 app.use('/api/chat', chatRouter);
+
+// ─── Microsoft Graph / SharePoint live search ─────────────────────────────────
+app.post('/api/sharepoint/search', postGraphSearch);
+app.post('/api/sharepoint/file', postGraphFile);
 
 // ─── Auth me ───────────────────────────────────────────────────────────────────
 app.get('/api/auth/me', (req, res) => {

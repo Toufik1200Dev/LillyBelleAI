@@ -57,6 +57,12 @@ export const env = {
   RATE_LIMIT_WINDOW_MS: envInt('RATE_LIMIT_WINDOW_MS', 60000),
   RATE_LIMIT_MAX_REQUESTS: envInt('RATE_LIMIT_MAX_REQUESTS', 20),
   isProd: envString('NODE_ENV', 'development') === 'production',
+  // ── Microsoft Graph API (SharePoint live search + file fetch) ──────────────
+  AZURE_TENANT_ID: envString('AZURE_TENANT_ID'),
+  AZURE_CLIENT_ID: envString('AZURE_CLIENT_ID'),
+  AZURE_CLIENT_SECRET: envString('AZURE_CLIENT_SECRET'),
+  /** Optional: scope Graph search to a specific SharePoint site ID. */
+  SHAREPOINT_SITE_ID: envString('SHAREPOINT_SITE_ID'),
 } as const;
 
 // Validate required env vars on startup

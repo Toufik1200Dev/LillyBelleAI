@@ -1,7 +1,8 @@
 import { env } from '../config/env';
-import { searchSharepointDocs, type SharepointSearchHit } from './sharepointSearchDb';
+import { searchSharepoint } from './graphService';
+import { searchSharepointDocs } from './sharepointSearchDb';
 import { loadRecentConversationTurns } from './memoryService';
-import { normalizeQuery, detectLanguage, type Language } from './queryNormalizationService';
+import { normalizeQuery, type Language } from './queryNormalizationService';
 
 interface AgentInput {
   userId: string;
@@ -24,26 +25,40 @@ interface AgentResult {
 }
 
 
+type CompactHit = { title: string; folder: string; url: string };
+
+function isGraphConfigured(): boolean {
+  return Boolean(env.AZURE_TENANT_ID && env.AZURE_CLIENT_ID && env.AZURE_CLIENT_SECRET);
+}
+
 async function runSharepointSearch(
-  queries: string[],
-  preferOpportunitiesCategory: boolean
-): Promise<{ hits: SharepointSearchHit[]; usedQuery: string }> {
-  const categories = preferOpportunitiesCategory ? (['OPPORTUNITIES'] as string[]) : undefined;
+  queries: string[]
+): Promise<{ hits: CompactHit[]; usedQuery: string }> {
   for (let i = 0; i < Math.min(queries.length, 8); i++) {
     const q = queries[i];
-    let hits = await searchSharepointDocs(q, categories, 10);
-    if (hits.length === 0 && categories) {
-      hits = await searchSharepointDocs(q, undefined, 10);
+
+    if (isGraphConfigured()) {
+      const graphHits = await searchSharepoint(q, 10);
+      if (graphHits.length > 0) {
+        return {
+          hits: graphHits.map((h) => ({ title: h.title, folder: h.path, url: h.webUrl })),
+          usedQuery: q,
+        };
+      }
+    } else {
+      // Supabase fallback when Azure credentials are not set
+      const dbHits = await searchSharepointDocs(q, undefined, 10);
+      if (dbHits.length > 0) {
+        return {
+          hits: dbHits.map((h) => ({ title: h.title, folder: h.folder, url: h.url })),
+          usedQuery: q,
+        };
+      }
     }
-    if (hits.length > 0) return { hits, usedQuery: q };
   }
 
   const last = queries[queries.length - 1] ?? '';
   return { hits: [], usedQuery: last };
-}
-
-function compactHits(hits: SharepointSearchHit[]): Array<{ title: string; folder: string; url: string }> {
-  return hits.map((h) => ({ title: h.title, folder: h.folder, url: h.url }));
 }
 
 function formatSources(hits: Array<{ title: string; folder: string; url: string }>) {
@@ -203,7 +218,7 @@ function greetingResponse(lang: Language): string {
 
 export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> {
   const normalized = normalizeQuery(input.message);
-  const language = detectLanguage(input.message);
+  const { language } = normalized;
   const history = await loadRecentConversationTurns(input.conversationId, env.AGENT_CONTEXT_WINDOW);
 
   if (normalized.isGreeting) {
@@ -219,13 +234,28 @@ export async function runCodeOnlyAgent(input: AgentInput): Promise<AgentResult> 
     };
   }
 
-  const { hits, usedQuery } = await runSharepointSearch(
-    normalized.searchQueries,
-    normalized.preferOpportunitiesCategory
-  );
+  if (normalized.isTooVague) {
+    return {
+      response:
+        language === 'en'
+          ? "Could you be more specific? Share a document name, PO number, or a few keywords and I'll search SharePoint for you."
+          : language === 'mixed'
+          ? "Pourriez-vous préciser / Could you be more specific? Share a file name, PO number, or keywords."
+          : "Pourriez-vous préciser votre demande ? Partagez un nom de fichier, un numéro de commande ou quelques mots-clés.",
+      metadata: {
+        sources: [],
+        totalHits: 0,
+        returnedCount: 0,
+        searchQuery: normalized.searchQuery,
+        searchAttempted: false,
+      },
+    };
+  }
+
+  const { hits, usedQuery } = await runSharepointSearch(normalized.searchQueries);
   const usedFallback = usedQuery !== normalized.searchQueries[0];
 
-  const compact = compactHits(hits).slice(0, 5);
+  const compact = hits.slice(0, 5);
   const historyText = formatHistory(history);
   const sourcesText = formatSources(compact);
   const prompt = buildPrompt({
