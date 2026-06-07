@@ -74,6 +74,7 @@ export async function searchSharepoint(query: string, size = 10): Promise<GraphS
         query: { queryString: query },
         size,
         fields: ['name', 'webUrl', 'parentReference', 'id', 'lastModifiedDateTime', 'size'],
+        region: env.GRAPH_SEARCH_REGION,
       },
     ],
   };
