@@ -38,7 +38,7 @@ async function runSharepointSearch(
     const q = queries[i];
 
     if (isGraphConfigured()) {
-      let graphHits;
+      let graphHits: Awaited<ReturnType<typeof searchSharepoint>> = [];
       try {
         graphHits = await searchSharepoint(q, 10);
       } catch (err) {
