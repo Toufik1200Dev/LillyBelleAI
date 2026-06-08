@@ -67,17 +67,24 @@ interface GraphSearchResponse {
 export async function searchSharepoint(query: string, size = 10): Promise<GraphSearchHit[]> {
   const token = await getGraphToken();
 
+  // Do NOT include a `fields` array — requesting navigation properties like
+  // `parentReference` triggers a two-step fanout in Microsoft's search backend
+  // that consistently times out (FanoutExternalTimeoutException / HTTP 500).
+  // Graph Search returns name, webUrl, and id by default without extra fan-out.
   const requestBody = {
     requests: [
       {
         entityTypes: ['driveItem'],
         query: { queryString: query },
+        from: 0,
         size,
-        fields: ['name', 'webUrl', 'parentReference', 'id', 'lastModifiedDateTime', 'size'],
         region: env.GRAPH_SEARCH_REGION,
       },
     ],
   };
+
+  console.log('[graphService] POST https://graph.microsoft.com/v1.0/search/query');
+  console.log('[graphService] Request body:', JSON.stringify(requestBody, null, 2));
 
   const res = await fetch('https://graph.microsoft.com/v1.0/search/query', {
     method: 'POST',
@@ -88,8 +95,11 @@ export async function searchSharepoint(query: string, size = 10): Promise<GraphS
     body: JSON.stringify(requestBody),
   });
 
+  console.log('[graphService] Response status:', res.status);
+
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    console.error('[graphService] Response body:', text);
     throw new Error(`Graph search error ${res.status}: ${text}`);
   }
 
@@ -114,6 +124,53 @@ export async function searchSharepoint(query: string, size = 10): Promise<GraphS
   }
 
   return hits;
+}
+
+// ─── Fallback: drive-root search ───────────────────────────────────────────────
+// Used when POST /v1.0/search/query returns 500 (e.g. Graph Search service timeout).
+// Requires SHAREPOINT_SITE_ID to be set.
+
+export async function searchSharepointFallback(
+  query: string,
+  size = 10
+): Promise<GraphSearchHit[]> {
+  const siteId = env.SHAREPOINT_SITE_ID;
+  if (!siteId) throw new Error('SHAREPOINT_SITE_ID is not configured — fallback search unavailable');
+
+  const token = await getGraphToken();
+  const url = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(siteId)}/drive/root/search(q='${encodeURIComponent(query)}')`;
+
+  console.log('[graphService] Fallback GET', url);
+
+  const res = await fetch(`${url}?$top=${size}&$select=id,name,webUrl,parentReference`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  console.log('[graphService] Fallback response status:', res.status);
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    console.error('[graphService] Fallback response body:', text);
+    throw new Error(`Graph fallback search error ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as {
+    value?: Array<{
+      id: string;
+      name: string;
+      webUrl: string;
+      parentReference?: { driveId?: string; path?: string };
+    }>;
+  };
+
+  return (data.value ?? []).map((item) => ({
+    title: item.name,
+    webUrl: item.webUrl,
+    path: item.parentReference?.path ?? '',
+    id: item.id,
+    driveId: item.parentReference?.driveId ?? '',
+    itemId: item.id,
+  }));
 }
 
 // ─── File fetch ────────────────────────────────────────────────────────────────

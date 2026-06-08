@@ -1,5 +1,5 @@
 import { env } from '../config/env';
-import { searchSharepoint } from './graphService';
+import { searchSharepoint, searchSharepointFallback } from './graphService';
 import { searchSharepointDocs } from './sharepointSearchDb';
 import { loadRecentConversationTurns } from './memoryService';
 import { normalizeQuery, type Language } from './queryNormalizationService';
@@ -38,7 +38,18 @@ async function runSharepointSearch(
     const q = queries[i];
 
     if (isGraphConfigured()) {
-      const graphHits = await searchSharepoint(q, 10);
+      let graphHits;
+      try {
+        graphHits = await searchSharepoint(q, 10);
+      } catch (err) {
+        console.warn('[aiAgentService] Graph search failed, trying drive-root fallback:', (err as Error).message);
+        try {
+          graphHits = await searchSharepointFallback(q, 10);
+        } catch (fallbackErr) {
+          console.warn('[aiAgentService] Fallback also failed, trying Supabase:', (fallbackErr as Error).message);
+          graphHits = [];
+        }
+      }
       if (graphHits.length > 0) {
         return {
           hits: graphHits.map((h) => ({ title: h.title, folder: h.path, url: h.webUrl })),
